@@ -17,12 +17,7 @@ SECRET_KEY = 'django-insecure-%)qsr3(h1cjv!)4=8i4(ants^--h@1=lufq0md*h!!dk1+90@=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8000",
-    "localhost",
-    "127.0.0.1"
-    ]
+ALLOWED_HOSTS = ['*']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173" # For local development
@@ -180,6 +175,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "staticfiles")]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
