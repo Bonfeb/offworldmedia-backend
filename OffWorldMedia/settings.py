@@ -22,11 +22,14 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    config("RENDER_FRONTEND_URL"),
+    config("NETLIFY_FRONTEND_URL")
+    ]
 
 CORS_ALLOWED_ORIGINS = [
-    config("CORS_ORIGIN_1"),
-    config("CORS_ORIGIN_2") # For local development
+    config("CORS_ORIGIN_1"), # For local development
+    config("CORS_ORIGIN_2")  # For production development
 ]
 
 AUTH_USER_MODEL = 'OWM.CustomUser'
