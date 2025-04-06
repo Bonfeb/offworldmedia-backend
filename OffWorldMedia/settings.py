@@ -23,14 +23,14 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = [
-    config("RENDER_FRONTEND"),
-    config("NETLIFY_FRONTEND")
+    'offworldmedia-frontend.onrender.com',
+    #config("NETLIFY_FRONTEND")
     ]
 
 CORS_ALLOWED_ORIGINS = [
     config("CORS_ORIGIN_1"), # For local development
     config("RENDER_FRONTEND_URL"),
-    config("NETLIFY_FRONTEND_URL")
+    #config("NETLIFY_FRONTEND_URL")
 ]
 
 AUTH_USER_MODEL = 'OWM.CustomUser'
