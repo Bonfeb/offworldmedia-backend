@@ -12,15 +12,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%)qsr3(h1cjv!)4=8i4(ants^--h@1=lufq0md*h!!dk1+90@='
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', 'postgresql://postgres:oKpKkgsTgHUSRssFBKSAJHxlpfZpKQHH@tramway.proxy.rlwy.net:54289/railway']
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173" # For local development
+    config("CORS_ORIGIN_1") # For local development
 ]
 
 AUTH_USER_MODEL = 'OWM.CustomUser'
