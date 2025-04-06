@@ -23,7 +23,7 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = [
-    'offworldmedia-frontend.onrender.com',
+    'offworldmedia-backend.onrender.com',
     #config("NETLIFY_FRONTEND")
     ]
 
