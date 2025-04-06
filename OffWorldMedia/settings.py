@@ -22,10 +22,11 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ['*', 'postgresql://postgres:oKpKkgsTgHUSRssFBKSAJHxlpfZpKQHH@tramway.proxy.rlwy.net:54289/railway']
+ALLOWED_HOSTS = ['*']
 
 CORS_ALLOWED_ORIGINS = [
-    config("CORS_ORIGIN_1") # For local development
+    config("CORS_ORIGIN_1"),
+    config("CORS_ORIGIN_2") # For local development
 ]
 
 AUTH_USER_MODEL = 'OWM.CustomUser'
@@ -179,7 +180,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+#STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
