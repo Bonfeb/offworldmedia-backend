@@ -12,6 +12,7 @@ urlpatterns = [
 
     #Profile Endpoint
     path('profile/', UserProfileView.as_view(), name='profile'),
+    path('profile/edit/', UserProfileView.as_view(), name="edit-profile"),
 
     #Userdashboard Endpoints
     path('userdashboard/', UserDashboardView.as_view(), name="userdashboard"),

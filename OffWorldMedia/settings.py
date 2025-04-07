@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
@@ -23,14 +23,12 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = [
-    'offworldmedia-backend.onrender.com',
-    #config("NETLIFY_FRONTEND")
+    config("RENDER_BASE_URL"),
     ]
 
 CORS_ALLOWED_ORIGINS = [
     #config("CORS_ORIGIN_1"), # For local development
-    "https://offworldmedia-frontend.onrender.com"
-    #config("RENDER_FRONTEND_URL"),
+    config("RENDER_FRONTEND_URL"),
     #config("NETLIFY_FRONTEND_URL")
 ]
 
