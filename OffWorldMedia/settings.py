@@ -70,9 +70,9 @@ REST_FRAMEWORK = {
     ),
 }
 
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE = True  # Set to True in production with HTTPS
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"  # or "None" if using HTTPS
+SESSION_COOKIE_SAMESITE = None  # or "None" if using HTTPS
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
@@ -85,7 +85,7 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SECURE": True,  # Set to True in production (HTTPS)
     "AUTH_COOKIE_HTTP_ONLY": True,
     "AUTH_COOKIE_PATH": "/",
-    "AUTH_COOKIE_SAMESITE": "Lax",
+    "AUTH_COOKIE_SAMESITE": None,
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -94,7 +94,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", config("RENDER_FRONTEND_URL")]
 CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = None
 
 ROOT_URLCONF = 'OffWorldMedia.urls'
 

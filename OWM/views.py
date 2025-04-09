@@ -91,8 +91,8 @@ class LoginView(APIView):
                 value=str(refresh),
                 httponly=True,
                 secure=False,  # 🔒 Use True in production
-                samesite="Lax",  # 🔒 Better CSRF protection
-                path="/api/token/refresh/"  # 🔄 Only send with refresh endpoint
+                samesite=None,  # 🔒 Better CSRF protection
+                path="/token/refresh/"  # 🔄 Only send with refresh endpoint
             )
 
             return response
