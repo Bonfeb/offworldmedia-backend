@@ -82,7 +82,7 @@ SIMPLE_JWT = {
     "AUTH_COOKIE": "access_token",  # Name of the cookie
     "AUTH_COOKIE_REFRESH": "refresh_token",  # Refresh token cookie
     "AUTH_COOKIE_DOMAIN": None,  # Set if needed
-    "AUTH_COOKIE_SECURE": False,  # Set to True in production (HTTPS)
+    "AUTH_COOKIE_SECURE": True,  # Set to True in production (HTTPS)
     "AUTH_COOKIE_HTTP_ONLY": True,
     "AUTH_COOKIE_PATH": "/",
     "AUTH_COOKIE_SAMESITE": "Lax",
@@ -92,7 +92,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", config("RENDER_FRONTEND_URL")]
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
 
