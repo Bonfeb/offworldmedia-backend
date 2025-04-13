@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from cloudinary.models import CloudinaryField
 from django.db import models
 
 # Custom User Model
@@ -7,7 +8,7 @@ class CustomUser(AbstractUser):
     last_name = models.CharField(max_length=20, null=False, blank=False)
     username = models.CharField(max_length=20, unique=True, null=False, blank=False)
     phone = models.CharField(max_length=15, blank=True, null=True)
-    profile_pic = models.ImageField(upload_to="Profile_Pics")
+    profile_pic = CloudinaryField('profile_pic', blank=True, null=True)
     address = models.CharField(max_length=30, blank=False, null=False)
 
     class Meta:
@@ -29,7 +30,7 @@ class Service(models.Model):
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='services/', blank=True, null=True)
+    image = CloudinaryField('service_images', blank=True, null=True)
 
     class Meta:
         verbose_name = "Service"
@@ -102,7 +103,7 @@ class TeamMember(models.Model):
     
     name = models.CharField(max_length=100)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    profile_pic = models.ImageField(upload_to='team/')
+    profile_pic = CloudinaryField('team_images', blank=True, null=True)
     bio = models.TextField()
 
     class Meta:
