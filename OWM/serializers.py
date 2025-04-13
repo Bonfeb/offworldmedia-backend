@@ -93,9 +93,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class ServiceSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
     class Meta:
         model = Service
         fields = ['id', 'name', 'category', 'description', 'price', 'image']
+    
+    def get_service_image(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
 
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')  # Auto-fill user
@@ -194,6 +200,12 @@ class ReviewSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class TeamMemberSerializer(serializers.ModelSerializer):
+    profile_pic = serializers.SerializerMethodField()
     class Meta:
         model = TeamMember
-        fields = '__all__'
+        fields = ['id', 'name', 'role', 'profile_pic', 'bio']
+
+    def get_profile_pic(self, obj):
+        if obj.profile_pic:
+            return obj.profile_pic.url
+        return None
