@@ -20,6 +20,7 @@ urlpatterns = [
 
     # Service Endpoints
     path('services/', ServiceView.as_view(), name='service-list'),
+    path('service/', ServiceView.as_view()),
     path('service/<int:pk>/', ServiceView.as_view(), name='service'),
 
     #handles listing all bookings
