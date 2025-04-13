@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -67,6 +68,29 @@ class CustomUserSerializer(serializers.ModelSerializer):
                 profile_pic_url = request.build_absolute_uri(profile_pic_url)
             representation["profile_pic"] = profile_pic_url
         return representation
+    
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        request = self.context.get("request")
+
+        # Get full profile picture URL if available
+        profile_pic_url = None
+        if self.user.profile_pic:
+            try:
+                relative_url = self.user.profile_pic.url
+                profile_pic_url = (
+                    request.build_absolute_uri(relative_url)
+                    if request else relative_url
+                )
+            except ValueError:
+                profile_pic_url = None
+
+        data["username"] = self.user.username
+        data["groups"] = list(self.user.groups.values_list("name", flat=True))
+        data["profile_pic"] = profile_pic_url
+
+        return data
 
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:

@@ -62,27 +62,20 @@ class LoginView(APIView):
     permission_classes = []
 
     def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-        user = authenticate(username=username, password=password)
+        serializer = CustomTokenObtainPairSerializer(data=request.data, context={"request": request})
 
-        if user:
+        if serializer.is_valid():
+            user = serializer.user
+            data = serializer.validated_data
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
-
-            # Get profile picture URL
-            profile_pic_url = user.profile_pic.url if user.profile_pic else None
-            if profile_pic_url:
-                profile_pic_url = request.build_absolute_uri(profile_pic_url)  # Full URL
-
-            groups = list(user.groups.values_list("name", flat=True))
 
             response = JsonResponse({
                 "message": "Login successful",
                 "access_token": access_token,  # ✅ Send access token in response
-                "username": user.username,
-                "profile_pic": profile_pic_url,
-                "groups": groups 
+                "username": data.get("username"),
+                "profile_pic": data.get("profile_pic"),
+                "groups": data.get("groups") 
             })
 
             # Store only refresh token in HTTP-only cookie
@@ -123,9 +116,15 @@ class CustomTokenRefreshView(TokenRefreshView):
             user_id = refresh["user_id"]
             user = CustomUser.objects.get(id=user_id)
             groups = list(user.groups.values_list("name", flat=True))
+
+            profile_pic_url = user.profile_pic.url if user.profile_pic else None
+            if profile_pic_url:
+                profile_pic_url = request.build_absolute_uri(profile_pic_url)
+
             response = Response({
                 "access_token": access_token,
-                "groups": groups
+                "groups": groups,
+                "profile_pic_url": profile_pic_url
                 })
             return response
         except Exception as e:
