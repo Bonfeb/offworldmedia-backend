@@ -19,7 +19,8 @@ urlpatterns = [
     path('userdashboard/<int:pk>/', UserDashboardView.as_view(), name="userdashboard"),
 
     # Service Endpoints
-    path('service/', ServiceView.as_view(), name='service-list'),
+    path('services/', ServiceView.as_view(), name='service-list'),
+    path('service/', ServiceView.as_view()),
     path('service/<int:pk>/', ServiceView.as_view(), name='service'),
 
     #handles listing all bookings
