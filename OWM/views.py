@@ -90,7 +90,7 @@ class LoginView(APIView):
                 key="refresh_token",
                 value=str(refresh),
                 httponly=True,
-                secure=False,  # 🔒 Use True in production
+                secure=True,  # 🔒 Use True in production
                 samesite=None,  # 🔒 Better CSRF protection
                 path="/token/refresh/"  # 🔄 Only send with refresh endpoint
             )
