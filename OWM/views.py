@@ -173,9 +173,9 @@ class ServiceView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-        """Handle POST requests - create booking"""
-        if not request.user.is_staff:
-            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        """Handle POST requests - create service"""
+        if not (request.user.is_staff and request.user.is_authenticated):
+            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ServiceSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
