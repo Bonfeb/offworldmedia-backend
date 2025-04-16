@@ -98,7 +98,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
         fields = ['id', 'name', 'category', 'description', 'price', 'image']
     
-    def get_service_image(self, obj):
+    def get_image(self, obj):
         if obj.image:
             return obj.image.url
         return None
