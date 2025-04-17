@@ -1,12 +1,9 @@
 from rest_framework import serializers
-from rest_framework.parsers import MultiPartParser, FormParser
-from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
 
 class CustomUserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField(required=False)  # Make profile_pic optional
-    parser_classes = (MultiPartParser, FormParser)
 
     class Meta:
         model = CustomUser
@@ -39,6 +36,15 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if user and CustomUser.objects.exclude(id=user.id).filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
+    
+    def create(self, validated_data):
+        # Remove password from validated_data to set it manually
+        password = validated_data.pop("password", None)
+        user = CustomUser(**validated_data)
+        if password:
+            user.set_password(password)
+        user.save()
+        return user
 
     def update(self, instance, validated_data):
         """Handle profile updates, including optional image uploads"""

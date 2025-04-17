@@ -32,6 +32,8 @@ CORS_ALLOWED_ORIGINS = [
     #config("NETLIFY_FRONTEND_URL")
 ]
 
+FRONTEND_URL = config("RENDER_FRONTEND_URL")
+
 AUTH_USER_MODEL = 'OWM.CustomUser'
 
 # Application definition
