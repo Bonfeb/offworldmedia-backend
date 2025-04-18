@@ -32,36 +32,49 @@ class RegisterView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        serializer = CustomUserSerializer(data=request.data)
+        try:
+            serializer = CustomUserSerializer(data=request.data)
+
+            print(f"Request content type: {request.content_type}")
+            print(f"Request data: {request.data}")
+            
+            if serializer.is_valid():
+                user = serializer.save()
+
+                customer_group, created = Group.objects.get_or_create(name="customer")
+                user.groups.add(customer_group)
+
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+
+                response = Response({"message": "Registration successful"}, status=status.HTTP_201_CREATED)
+                response.set_cookie(
+                    key="refresh_token",
+                    value=str(refresh),
+                    httponly=True,
+                    secure=True,  # Set to True in production with HTTPS
+                    samesite="Lax",
+                    path="/api/token/refresh/"
+                )
+                response.set_cookie(
+                    key="access_token",
+                    value=access_token,
+                    httponly=True,
+                    secure=True,
+                    samesite="Lax",
+                    path="/"
+                )
+                return response
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-        if serializer.is_valid():
-            user = serializer.save()
-
-            customer_group, created = Group.objects.get_or_create(name="customer")
-            user.groups.add(customer_group)
-
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            response = Response({"message": "Registration successful"}, status=status.HTTP_201_CREATED)
-            response.set_cookie(
-                key="refresh_token",
-                value=str(refresh),
-                httponly=True,
-                secure=True,  # Set to True in production with HTTPS
-                samesite="Lax",
-                path="/api/token/refresh/"
-            )
-            response.set_cookie(
-                key="access_token",
-                value=access_token,
-                httponly=True,
-                secure=True,
-                samesite="Lax",
-                path="/"
-            )
-            return response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # You can log the full traceback for debugging
+            import traceback
+            traceback.print_exc()
+            return Response({"error": "Something went wrong", "detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Login View (JWT Token Generation)
 class LoginView(APIView):
