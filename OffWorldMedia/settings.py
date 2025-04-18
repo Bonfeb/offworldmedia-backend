@@ -194,15 +194,20 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 #Files in Production
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": config("CLOUDINARY_NAME"),
     "API_KEY": config("CLOUDINARY_API_KEY"),
     "API_SECRET": config("CLOUDINARY_API_SECRET")
 }
 
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+print("Cloudinary name:", config("CLOUDINARY_NAME", default="Not Found"))
+print("Cloudinary key:", config("CLOUDINARY_API_KEY", default="Not Found"))
+print("Cloudinary secret:", config("CLOUDINARY_API_SECRET", default="Not Found"))
+
