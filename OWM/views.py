@@ -220,10 +220,17 @@ class UserProfileView(APIView):
 class ServiceView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request):
+    def get(self, request, pk=None):
+        if pk is None:
+            try:
+                service = Service.objects.get(pk=pk)
+                serializer = ServiceSerializer(service)
+                
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Service.DoesNotExist:
+                return Response({"error": "Service Not Found"}, status=status.HTTP_404_NOT_FOUND)
+            
         services = Service.objects.all()
-        serializer = ServiceSerializer(services, many=True)
-
         if request.user.is_staff:
             audio_recording = services.filter(category='audio')
             video_recording = services.filter(category='video')
@@ -237,6 +244,7 @@ class ServiceView(APIView):
             
             return Response({"services": services_data}, status=status.HTTP_200_OK)
         
+        serializer = ServiceSerializer(services, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
@@ -264,15 +272,6 @@ class ServiceView(APIView):
         service = get_object_or_404(Service, pk=pk)
         service.delete()
         return Response({"message": "Service deleted successfully"}, status=204)
-
-class ServiceDetailView(APIView):
-    permission_classes = [AllowAny]  # Adjust permissions as needed
-
-    def get(self, request, pk):
-        """Fetch service details by ID."""
-        service = get_object_or_404(Service, pk=pk)
-        serializer = ServiceSerializer(service)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Booking API
 class BookingListCreateView(generics.ListCreateAPIView):
