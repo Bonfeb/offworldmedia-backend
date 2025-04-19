@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'cloudinary',
     'cloudinary_storage',
-    'channels'
 ]
 
 MIDDLEWARE = [
