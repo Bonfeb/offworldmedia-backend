@@ -756,30 +756,45 @@ class AdminDashboardView(APIView):
         serializer = BookingSerializer(bookings, many=True)
         return Response(serializer.data)
 
-    def _get_users_list(self, id):
-        """Return list of users for dropdown"""
-        users = CustomUser.objects.all().order_by('first_name')
-
-        user = CustomUser.objects.get(id=id)
-        bookings = Booking.objects.get(user=user)
-        reviews = Review.objects.filter(user=user)
-        messages = ContactUs.objects.filter(user=user)
-
-        users_data = CustomUserSerializer(users, many=True).data
-        bookings_data = BookingSerializer(bookings, many=True).data
-        reviews_data = ReviewSerializer(reviews, many=True).data
-        messages_data = ContactUsSerializer(messages, many=True).data
+    def _get_users_list(self):
+        """Return list of users or detailed info for a specific user"""
+        user_id = self.request.query_params.get('id')
         
-        return Response({
-            "users": users_data,
-            "bookings": bookings_data,
-            "reviews": reviews_data,
-            "messages": messages_data
+        # If no specific user ID is provided, return all users
+        if not user_id:
+            users = CustomUser.objects.all().order_by('first_name')
+            serializer = CustomUserSerializer(users, many=True)
+            return Response(serializer.data)
+        
+        # If a specific user ID is provided, return detailed info for that user
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            bookings = Booking.objects.filter(user=user)  # Changed from get() to filter()
+            reviews = Review.objects.filter(user=user)
+            messages = ContactUs.objects.filter(user=user)
+            
+            # Serialize all data
+            user_data = CustomUserSerializer(user).data
+            bookings_data = BookingSerializer(bookings, many=True).data
+            reviews_data = ReviewSerializer(reviews, many=True).data
+            messages_data = ContactUsSerializer(messages, many=True).data
+            
+            return Response({
+                "user": user_data,
+                "bookings": bookings_data,
+                "reviews": reviews_data,
+                "messages": messages_data
             })
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    def _get_services_list(self):
-        """Return list of services for dropdown"""
+    def _get_services_list(self, request):
+        category_filter = request.query_params.get('category', None)
         services = Service.objects.all().order_by('name')
+
+        if category_filter and category_filter.lower() != 'all':
+            services = services.filter(category=category_filter.lower())
+
         serializer = ServiceSerializer(services, many=True)
         return Response(serializer.data)
 
