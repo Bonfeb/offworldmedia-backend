@@ -22,6 +22,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework.exceptions import ValidationError
 from .models import *
 from .serializers import *
@@ -313,8 +314,20 @@ class BookingView(APIView):
 
     # Fetch all Bookings & Services for admin
         if request.user.is_staff:
+           # Get latest bookings (last 24 hours by default)
+            since = request.query_params.get('since')
+            if since:
+                try:
+                    since = timezone.datetime.fromisoformat(since)
+                except (ValueError, TypeError):
+                    since = timezone.now() - timedelta(hours=24)
+            else:
+                since = timezone.now() - timedelta(hours=24) 
+
             #Bookings
             admin_bookings = Booking.objects.all()
+            latest_bookings = admin_bookings.filter(created_at__gte=since).order_by('-created_at')
+
             pending_bookings = admin_bookings.filter(status="pending")
             cancelled_bookings = admin_bookings.filter(status="canceled")
             completed_bookings = admin_bookings.filter(status="completed")
@@ -323,6 +336,8 @@ class BookingView(APIView):
                 "pending_bookings": BookingSerializer(pending_bookings, many=True).data,
                 "completed_bookings": BookingSerializer(completed_bookings, many=True).data,
                 "cancelled_bookings": BookingSerializer(cancelled_bookings, many=True).data,
+                "latest_bookings": BookingSerializer(latest_bookings, many=True).data,
+                "latest_since": since.isoformat()
             }
 
             return Response(
@@ -407,11 +422,33 @@ class BookingView(APIView):
                 event_location=event_location
             )
 
+            # Get all admin/staff emails
+            admin_emails = list(CustomUser.objects.filter(
+                is_staff=True
+            ).values_list('email', flat=True))
+            
+            # Prepare booking details for frontend
+            booking_details = {
+                'id': booking.id,
+                'user_name': user.get_full_name(),
+                'user_email': user.email,
+                'service_name': booking.service.name,
+                'event_date': booking.event_date,
+                'event_time': booking.event_time,
+                'event_location': booking.event_location,
+                'created_at': booking.created_at,
+                'admin_emails': admin_emails
+            }
+
             # Remove the item from the cart after successful booking
             cart_item.delete()
 
             return Response(
-                {"message": "Service successfully booked!", "booking": BookingSerializer(booking).data},
+                {
+                    "message": "Service successfully booked!", 
+                    "booking": BookingSerializer(booking).data,
+                    "booking_details": booking_details,
+                },
                 status=status.HTTP_201_CREATED
             )
 

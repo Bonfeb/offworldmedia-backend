@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'cloudinary',
-    'cloudinary_storage'
+    'cloudinary_storage',
+    'channels'
 ]
 
 MIDDLEWARE = [
