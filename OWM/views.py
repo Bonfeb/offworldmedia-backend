@@ -722,13 +722,21 @@ class AdminDashboardView(APIView):
         users = CustomUser.objects.all().order_by('first_name')
 
         user = CustomUser.objects.get(id=id)
+        bookings = Booking.objects.get(user=user)
         reviews = Review.objects.filter(user=user)
         messages = ContactUs.objects.filter(user=user)
 
-        review_data = ReviewSerializer(reviews, many=True).data
+        users_data = CustomUserSerializer(users, many=True).data
+        bookings_data = BookingSerializer(bookings, many=True).data
+        reviews_data = ReviewSerializer(reviews, many=True).data
+        messages_data = ContactUsSerializer(messages, many=True).data
         
-        serializer = CustomUserSerializer(users, many=True)
-        return Response(serializer.data)
+        return Response({
+            "users": users_data,
+            "bookings": bookings_data,
+            "reviews": reviews_data,
+            "messages": messages_data
+            })
 
     def _get_services_list(self):
         """Return list of services for dropdown"""
