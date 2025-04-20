@@ -766,11 +766,10 @@ class AdminDashboardView(APIView):
         bookings = Booking.objects.all().order_by('-event_date', '-event_time')
 
         if status_filter and status_filter.lower() != 'all':
-            bookings = bookings.filter(status=status_filter.capitalize())  # Capitalize for consistency
+            bookings = bookings.filter(status=status_filter.lower())  # Capitalize for consistency
 
         serializer = BookingSerializer(bookings, many=True)
         return Response(serializer.data)
-
 
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
