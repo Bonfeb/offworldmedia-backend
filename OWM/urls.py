@@ -40,6 +40,7 @@ urlpatterns = [
 
     #Contact Endpoints
     path('contactus/', ContactUsView.as_view(), name='contactus'),
+    path('contactus/<int:pk>/', ContactUsView.as_view()),
 
     path('test/<int:pk>/', TestView.as_view(), name='test'),
 

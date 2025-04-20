@@ -603,6 +603,9 @@ class ContactUsView(APIView):
             return Response({"message": "Your message has been sent!"}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk):
+        pass
 
 # Review API
 class ReviewView(APIView):
@@ -822,7 +825,7 @@ class AdminDashboardView(APIView):
 
         if not review_id:
             reviews = Review.objects.all().order_by('created_at')
-            serializer = ReviewSerializer(reviews, may=True)
+            serializer = ReviewSerializer(reviews, many=True)
             return Response(serializer.data)
         try:
             review = Review.objects.select_related('user').get(id=review_id)
