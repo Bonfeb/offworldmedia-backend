@@ -76,11 +76,16 @@ class Cart(models.Model):
 
 # Contact Model
 class ContactUs(models.Model):
+    STATUS_CHOICES = [
+        ('read', 'Read'),
+        ('unread', 'Unread'),
+    ]
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     email = models.EmailField()
     subject = models.CharField(max_length=255)
     message = models.TextField()
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='read')
     sent_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

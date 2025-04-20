@@ -668,6 +668,12 @@ class AdminDashboardView(APIView):
             return self._get_services_list(request)
         elif action == 'booking-detail':
             return self._get_booking_detail(request)
+        elif action == 'messages':
+            return self._get_messages()
+        elif action == 'reviews':
+            return self._get_reviews()
+        elif action == 'team':
+            return self._get_team_members
         else:
             return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -797,6 +803,47 @@ class AdminDashboardView(APIView):
 
         serializer = ServiceSerializer(services, many=True)
         return Response(serializer.data)
+    
+    def _get_messages(self):
+        message_id = self.request.query_params.get('id')
+        if not message_id:
+            messages = ContactUs.objects.all().order_by('sent_at')
+            serializer = ContactUsSerializer(messages, many=True)
+            return Response(serializer.data)
+        try:
+            message = ContactUs.objects.select_related('user').get(id=message_id)
+            serializer = ContactUsSerializer(message)
+            return Response(serializer.data)
+        except ContactUs.DoesNotExist:
+            return Response({'error': "Message Not Found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    def _get_reviews(self):
+        review_id = self.request.query_params.get('id')
+
+        if not review_id:
+            reviews = Review.objects.all().order_by('created_at')
+            serializer = ReviewSerializer(reviews, may=True)
+            return Response(serializer.data)
+        try:
+            review = Review.objects.select_related('user').get(id=review_id)
+            serializer = ReviewSerializer(review)
+            return Response(serializer.data)
+        except Review.DoesNotExist:
+            return Response({'error': "Review Not Found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    def _get_team_members(self):
+        member_id = self.request.query_params.get('id')
+
+        if member_id:
+            members = TeamMember.objects.all().order_by('role')
+            serializer = TeamMemberSerializer(members, many=True)
+            return Response(serializer.data)
+        try:
+            member = TeamMember.objects.get(id=member_id)
+            serializer = TeamMemberSerializer(member)
+            return Response(serializer.data)
+        except TeamMember.DoesNotExist:
+            return Response({'error': "Team Member NOt Found"}, status=status.HTTP_404_NOT_FOUND)
 
     def _get_booking_detail(self, request):
         """Return details of a specific booking"""
