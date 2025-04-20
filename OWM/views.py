@@ -755,15 +755,22 @@ class AdminDashboardView(APIView):
         return Response({"stats": stats})
 
     def _get_bookings(self, request):
-        """Return bookings list with optional status filter"""
+        booking_id = request.query_params.get('id')
         status_filter = request.query_params.get('status', None)
-        bookings = Booking.objects.all().select_related('user', 'service').order_by('-event_date', '-event_time')
+
+        if booking_id:
+            booking = get_object_or_404(Booking, pk=booking_id)
+            serializer = BookingSerializer(booking)
+            return Response(serializer.data)
+
+        bookings = Booking.objects.all().order_by('-event_date', '-event_time')
 
         if status_filter and status_filter.lower() != 'all':
-            bookings = bookings.filter(status=status_filter.capitalize())  # Ensure correct case
+            bookings = bookings.filter(status=status_filter.capitalize())  # Capitalize for consistency
 
         serializer = BookingSerializer(bookings, many=True)
         return Response(serializer.data)
+
 
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
