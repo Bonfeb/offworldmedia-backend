@@ -110,7 +110,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
 class BookingSerializer(serializers.ModelSerializer):
-    user = serializers.ReadOnlyField(source='user.username')  # Auto-fill user
+    user = serializers.ReadOnlyField()  # Auto-fill user
     user_id = serializers.IntegerField(write_only=True, required=False)
     phone = serializers.CharField(source='user.phone')
     service = ServiceSerializer()

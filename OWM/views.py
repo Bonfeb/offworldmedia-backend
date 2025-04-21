@@ -9,7 +9,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Case, When, Value, IntegerField
 from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -768,7 +768,17 @@ class AdminDashboardView(APIView):
         if status_filter and status_filter.lower() != 'all':
             bookings = bookings.filter(status=status_filter.lower())  # Capitalize for consistency
 
-        serializer = BookingSerializer(bookings, many=True)
+        all_bookings = bookings.annotate(
+            status_priority=Case(
+            When(status='pending', then=Value(0)),
+            When(status='completed', then=Value(1)),
+            When(status='cancelled', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
+        )
+        ).order_by('status_priority', '-event_date', 'event_time')
+
+        serializer = BookingSerializer(all_bookings, many=True)
         return Response(serializer.data)
 
     def _get_users_list(self):
