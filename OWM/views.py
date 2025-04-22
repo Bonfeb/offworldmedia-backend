@@ -638,8 +638,7 @@ class AdminDashboardView(APIView):
             return self._get_reviews()
         elif action == 'team':
             return self._get_team_members()
-        else:
-            return self._get_dashboard_overview()
+        return self._get_dashboard_overview()
 
     def post(self, request):
         """Handle POST requests - create booking"""
