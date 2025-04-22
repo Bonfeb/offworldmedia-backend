@@ -764,7 +764,7 @@ class AdminDashboardView(APIView):
             serializer = BookingSerializer(booking)
             return Response(serializer.data)
 
-        bookings = Booking.objects.all().order_by('-event_date', '-event_time')
+        bookings = Booking.objects.select_related('user', 'service').order_by('-event_date', '-event_time')
 
         if status_filter and status_filter.lower() != 'all':
             bookings = bookings.filter(status=status_filter.lower())

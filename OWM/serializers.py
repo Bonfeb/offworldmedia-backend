@@ -112,7 +112,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField()  # Auto-fill user
     user_id = serializers.IntegerField(write_only=True, required=False)
-    phone = serializers.CharField(source='user.phone')
+    phone = serializers.SerializerMethodField()
     service = ServiceSerializer()
     service_image_url = serializers.SerializerMethodField()
     service_id = serializers.IntegerField(write_only=True)
@@ -132,6 +132,9 @@ class BookingSerializer(serializers.ModelSerializer):
             'username': obj.user.username,
             #'full_name': f"{obj.user.first_name} {obj.user.last_name}"
         }
+    
+    def get_phone(self, obj):
+        return getattr(obj.user, 'phone', None)
         
     def validate(self, data):
         request = self.context.get('request')
