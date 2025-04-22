@@ -772,7 +772,7 @@ class AdminDashboardView(APIView):
             status_priority=Case(
             When(status='pending', then=Value(0)),
             When(status='completed', then=Value(1)),
-            When(status='cancelled', then=Value(2)),
+            When(status='canceled', then=Value(2)),
             default=Value(3),
             output_field=IntegerField(),
         )
