@@ -756,52 +756,79 @@ class AdminDashboardView(APIView):
         return Response({"stats": stats})
 
     def _get_bookings(self, request):
+        """Handle bookings retrieval with various filters and options"""
         booking_id = request.query_params.get('id')
         status_filter = request.query_params.get('status', None)
-
+        
+        # If looking for a specific booking
         if booking_id:
             booking = get_object_or_404(Booking, pk=booking_id)
             serializer = BookingSerializer(booking)
             return Response(serializer.data)
 
-        bookings = Booking.objects.select_related('user', 'service')
-
+        # Get latest bookings (last 24 hours by default)
+        since = request.query_params.get('since')
+        if since:
+            try:
+                since = timezone.datetime.fromisoformat(since)
+            except (ValueError, TypeError):
+                since = timezone.now() - timedelta(hours=24)
+        else:
+            since = timezone.now() - timedelta(hours=24)
+        
+        # Base queryset
+        all_bookings = Booking.objects.select_related('user', 'service')
+        
+        # Apply status filter if provided
         if status_filter and status_filter.lower() != 'all':
-            bookings = bookings.filter(status=status_filter.lower())
+            filtered_bookings = all_bookings.filter(status=status_filter.lower())
+        else:
+            filtered_bookings = all_bookings
 
-        # Log for debugging
-        print(f"📌 Status filter: {status_filter}")
-        print(f"📌 Booking count: {bookings.count()}")
-
+        # Get various booking categories
+        latest_bookings = all_bookings.filter(created_at__gte=since).order_by('-created_at')
+        pending_bookings = all_bookings.filter(status="pending")
+        cancelled_bookings = all_bookings.filter(status="canceled")
+        completed_bookings = all_bookings.filter(status="completed")
+        
         try:
-            # Simplify the query to avoid annotation errors
+            # For the main filtered result, use simpler ordering
             if status_filter:
-                # If we're already filtering by status, just order by date
-                ordered_bookings = bookings.order_by('-event_date', '-event_time')
+                # Already filtered by status, just order by date
+                ordered_bookings = filtered_bookings.order_by('-event_date', '-event_time')
             else:
-                # Otherwise, use a simpler priority ordering approach
-                # First get pending bookings
-                pending = bookings.filter(status='pending').order_by('-event_date', '-event_time')
-                # Then completed
-                completed = bookings.filter(status='completed').order_by('-event_date', '-event_time')
-                # Then canceled
-                canceled = bookings.filter(status='canceled').order_by('-event_date', '-event_time')
-                # Then others
-                others = bookings.exclude(status__in=['pending', 'completed', 'canceled']).order_by('-event_date', '-event_time')
-                
-                # Combine the querysets
+                # Order by status priority
+                pending = filtered_bookings.filter(status='pending').order_by('-event_date', '-event_time')
+                completed = filtered_bookings.filter(status='completed').order_by('-event_date', '-event_time')
+                canceled = filtered_bookings.filter(status='canceled').order_by('-event_date', '-event_time')
+                others = filtered_bookings.exclude(status__in=['pending', 'completed', 'canceled']).order_by('-event_date', '-event_time')
                 ordered_bookings = list(pending) + list(completed) + list(canceled) + list(others)
-                
-            serializer = BookingSerializer(ordered_bookings, many=True)
-            return Response(serializer.data)
+
+            # Prepare response data
+            admin_data = {
+                "pending_bookings": BookingSerializer(pending_bookings, many=True).data,
+                "completed_bookings": BookingSerializer(completed_bookings, many=True).data,
+                "cancelled_bookings": BookingSerializer(cancelled_bookings, many=True).data,
+                "latest_bookings": BookingSerializer(latest_bookings, many=True).data,
+                "latest_since": since.isoformat()
+            }
+
+            # Main filtered bookings
+            main_bookings = BookingSerializer(ordered_bookings, many=True).data
+
+            return Response({
+                "bookings": main_bookings,
+                "admin_data": admin_data
+            })
+
         except Exception as e:
             print(f"🔥 Error in _get_bookings: {str(e)}")
             traceback.print_exc()
-            # Return a more specific error message
             return Response({
                 "error": "Failed to retrieve bookings",
                 "details": str(e)
             }, status=500)
+
 
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
