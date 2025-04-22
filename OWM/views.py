@@ -639,7 +639,7 @@ class AdminDashboardView(APIView):
         elif action == 'team':
             return self._get_team_members()
         else:
-            return self._get_dashboard_overview
+            return self._get_dashboard_overview()
 
     def post(self, request):
         """Handle POST requests - create booking"""
@@ -700,7 +700,7 @@ class AdminDashboardView(APIView):
         status=status.HTTP_204_NO_CONTENT
         )
 
-    def _get_dashboard_overview(self, request):
+    def _get_dashboard_overview(self):
         # Recent bookings
         recent_bookings = Booking.objects.select_related('user', 'service').order_by('-created_at')[:3]
         booking_data = BookingSerializer(recent_bookings, many=True).data
@@ -708,7 +708,7 @@ class AdminDashboardView(APIView):
         recent_reviews = Review.objects.select_related('user', 'service').order_by('-created_at')[:3]
         review_data = ReviewSerializer(recent_reviews, many=True).data
         # Recent messages
-        recent_messages = ContactUs.objects.order_by('-created_at')[:5]
+        recent_messages = ContactUs.objects.order_by('-sent_at')[:5]
         message_data = ContactUsSerializer(recent_messages, many=True).data
 
         stats = {
