@@ -746,7 +746,7 @@ class AdminDashboardView(APIView):
             "total_bookings": Booking.objects.count(),
             "pending_bookings": Booking.objects.filter(status="pending").count(),
             "completed_bookings": Booking.objects.filter(status="completed").count(),
-            "cancelled_bookings": Booking.objects.filter(status="cancelled").count(),
+            "cancelled_bookings": Booking.objects.filter(status="canceled").count(),
             "total_services": Service.objects.count(),
             "total_users": CustomUser.objects.count(),
             "service_categories": Service.objects.values('category')
@@ -771,7 +771,6 @@ class AdminDashboardView(APIView):
 
         print("📌 Status filter:", status_filter)
         print("📌 Booking count before annotate:", bookings.count())
-        print("🔥 Full _get_bookings error:", e)
 
         try:
             all_bookings = bookings.annotate(
@@ -787,7 +786,7 @@ class AdminDashboardView(APIView):
             return Response(serializer.data)
         except Exception as e:
             print("🔥 Annotation error:", e)
-            #print("🔥 Full _get_bookings error:", e)
+            print("🔥 Full _get_bookings error:", e)
             traceback.print_exc()
             return Response({"error": str(e)}, status=500)
 
