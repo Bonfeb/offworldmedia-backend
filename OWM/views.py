@@ -676,7 +676,7 @@ class AdminDashboardView(APIView):
         elif action == 'reviews':
             return self._get_reviews()
         elif action == 'team':
-            return self._get_team_members
+            return self._get_team_members()
         else:
             return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -853,16 +853,16 @@ class AdminDashboardView(APIView):
     def _get_team_members(self):
         member_id = self.request.query_params.get('id')
 
-        if member_id:
-            members = TeamMember.objects.all().order_by('role')
-            serializer = TeamMemberSerializer(members, many=True)
-            return Response(serializer.data)
-        try:
-            member = TeamMember.objects.get(id=member_id)
-            serializer = TeamMemberSerializer(member)
-            return Response(serializer.data)
-        except TeamMember.DoesNotExist:
-            return Response({'error': "Team Member NOt Found"}, status=status.HTTP_404_NOT_FOUND)
+        if member_id:          
+            try:
+                member = TeamMember.objects.get(id=member_id)
+                serializer = TeamMemberSerializer(member)
+                return Response(serializer.data)
+            except TeamMember.DoesNotExist:
+                return Response({'error': "Team Member NOt Found"}, status=status.HTTP_404_NOT_FOUND)
+        members = TeamMember.objects.all().order_by('role')
+        serializer = TeamMemberSerializer(members, many=True)
+        return Response(serializer.data)
 
     def _get_booking_detail(self, request):
         """Return details of a specific booking"""
