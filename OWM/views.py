@@ -639,7 +639,7 @@ class AdminDashboardView(APIView):
         elif action == 'team':
             return self._get_team_members()
         else:
-            return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+            return self._get_dashboard_overview
 
     def post(self, request):
         """Handle POST requests - create booking"""
