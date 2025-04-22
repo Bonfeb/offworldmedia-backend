@@ -23,6 +23,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 from datetime import timedelta
+import traceback
 from rest_framework.exceptions import ValidationError
 from .models import *
 from .serializers import *
@@ -766,20 +767,27 @@ class AdminDashboardView(APIView):
         bookings = Booking.objects.all().order_by('-event_date', '-event_time')
 
         if status_filter and status_filter.lower() != 'all':
-            bookings = bookings.filter(status=status_filter.lower())  # Capitalize for consistency
+            bookings = bookings.filter(status=status_filter.lower())
+            
+        print("📌 Status filter:", status_filter)
+        print("📌 Booking count before annotate:", bookings.count())
 
-        all_bookings = bookings.annotate(
+        try:
+            all_bookings = bookings.annotate(
             status_priority=Case(
             When(status='pending', then=Value(0)),
             When(status='completed', then=Value(1)),
             When(status='canceled', then=Value(2)),
             default=Value(3),
             output_field=IntegerField(),
-        )
-        ).order_by('status_priority', '-event_date', 'event_time')
-
-        serializer = BookingSerializer(all_bookings, many=True)
-        return Response(serializer.data)
+            )
+            ).order_by('status_priority', '-event_date', 'event_time')
+            serializer = BookingSerializer(all_bookings, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print("🔥 Annotation error:", e)
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=500)
 
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
