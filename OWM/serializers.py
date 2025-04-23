@@ -110,7 +110,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
 class BookingSerializer(serializers.ModelSerializer):
-    user = serializers.ReadOnlyField()  # Auto-fill user
+    user = serializers.SerializerMethodField(read_only=True)  # Auto-fill user
     user_id = serializers.IntegerField(write_only=True, required=False)
     phone = serializers.SerializerMethodField()
     service = ServiceSerializer()
@@ -134,7 +134,9 @@ class BookingSerializer(serializers.ModelSerializer):
         }
     
     def get_phone(self, obj):
-        return getattr(obj.user, 'phone', None)
+        if obj.user:
+            return getattr(obj.user, 'phone', None)
+        return None
         
     def validate(self, data):
         request = self.context.get('request')
@@ -154,7 +156,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
     def get_service_image_url(self, obj):
         request = self.context.get('request')
-        if obj.service and obj.service.image:
+        if obj.service and hasattr(obj.service, 'image') and obj.service.image:
             if request is not None:
                 return request.build_absolute_uri(obj.service.image.url)  # ✅ Only use build_absolute_uri if request exists
             return obj.service.image.url  # ✅ Return relative URL if no request
@@ -189,6 +191,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         extra_kwargs = {'user': {'read_only': True}}
     
     def get_user(self, obj):
+        if not obj.user:
+            return {}
         return {
             "username": obj.user.username,
             "profile_pic": obj.user.profile_pic.url if obj.user.profile_pic else None
