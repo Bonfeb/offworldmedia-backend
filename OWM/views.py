@@ -704,21 +704,28 @@ class AdminDashboardView(APIView):
         logger.info("Fetching admin dashboard overview")
         
         try:
-            # Add a simple test response to see if the endpoint is accessible at all
-            # If this works, we can gradually add more functionality back
-            return Response({
-                "status": "API endpoint is working",
-                "stats": {
+            stats = {}
+            try:
+                stats["total_bookings"] = Booking.objects.count()
+                stats["pending_bookings"] = Booking.objects.filter(status="pending").count()
+                stats["completed_bookings"] = Booking.objects.filter(status="completed").count()
+                stats["cancelled_bookings"] = Booking.objects.filter(status="canceled").count()
+                logger.debug("Stats collected successfully")
+            except Exception as e:
+                logger.error(f"Error getting statistics: {str(e)}")
+                stats = {
                     "total_bookings": 0,
                     "pending_bookings": 0,
                     "completed_bookings": 0,
                     "cancelled_bookings": 0
-                },
+                }
+            # Return just the stats first to ensure this works
+            return Response({
+                "stats": stats,
                 "recent_bookings": [],
                 "recent_reviews": [],
                 "recent_messages": []
-            })
-            
+            })  
         except Exception as e:
             logger.error(f"Dashboard overview error: {str(e)}", exc_info=True)  # Add exc_info for stack trace
             return Response(
