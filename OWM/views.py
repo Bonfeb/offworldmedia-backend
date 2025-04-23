@@ -719,10 +719,19 @@ class AdminDashboardView(APIView):
                     "completed_bookings": 0,
                     "cancelled_bookings": 0
                 }
+            # Add recent bookings
+            booking_data = []
+            try:
+                logger.debug("Querying recent bookings")
+                recent_bookings = Booking.objects.select_related('user', 'service').order_by('-created_at')[:3]
+                booking_data = BookingSerializer(recent_bookings, many=True).data
+                logger.debug(f"Retrieved {len(booking_data)} recent bookings")
+            except Exception as e:
+                logger.error(f"Error retrieving recent bookings: {str(e)}", exc_info=True)
             # Return just the stats first to ensure this works
             return Response({
                 "stats": stats,
-                "recent_bookings": [],
+                "recent_bookings": booking_data,
                 "recent_reviews": [],
                 "recent_messages": []
             })  
