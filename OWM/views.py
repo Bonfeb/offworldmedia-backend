@@ -719,6 +719,7 @@ class AdminDashboardView(APIView):
                     "completed_bookings": 0,
                     "cancelled_bookings": 0
                 }
+                
             # Add recent bookings
             booking_data = []
             try:
@@ -728,12 +729,29 @@ class AdminDashboardView(APIView):
                 logger.debug(f"Retrieved {len(booking_data)} recent bookings")
             except Exception as e:
                 logger.error(f"Error retrieving recent bookings: {str(e)}", exc_info=True)
+
+            # Add recent reviews   
+            review_data = []
+            try:
+                logger.debug("Querying recent reviews")
+                recent_reviews = Review.objects.select_related('user', 'service').order_by('-created_at')[:3]
+                review_data = ReviewSerializer(recent_reviews, many=True).data
+            except Exception as e:
+                logger.error(f"Error retrieving recent reviews: {str(e)}", exc_info=True)
+
+            message_data = []
+            try:
+                logger.debug("Querying recent messages")
+                recent_messages = ContactUs.objects.order_by('-sent_at')[:3]
+                message_data = ContactUsSerializer(recent_messages, many=True).data
+            except Exception as e:
+                logger.error(f"Error retrieving recent messages: {str(e)}", exc_info=True)
             # Return just the stats first to ensure this works
             return Response({
                 "stats": stats,
                 "recent_bookings": booking_data,
-                "recent_reviews": [],
-                "recent_messages": []
+                "recent_reviews": review_data,
+                "recent_messages": message_data
             })  
         except Exception as e:
             logger.error(f"Dashboard overview error: {str(e)}", exc_info=True)  # Add exc_info for stack trace
