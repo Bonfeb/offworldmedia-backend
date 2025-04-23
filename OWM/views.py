@@ -702,60 +702,27 @@ class AdminDashboardView(APIView):
     def _get_dashboard_overview(self):
         logger = logging.getLogger(__name__)
         logger.info("Fetching admin dashboard overview")
+        
         try:
-            # Use select_related to optimize database queries
-            logger.debug("Querying recent bookings")
-            recent_bookings = Booking.objects.select_related('user', 'service').order_by('-created_at')[:3]
-            
-            # Handle serialization with error checking
-            try:
-                booking_data = BookingSerializer(recent_bookings, many=True).data
-            except Exception as e:
-                logger.error(f"Error serializing bookings: {str(e)}")
-                booking_data = []
-            
-            # Recent reviews with error handling
-            logger.debug("Querying recent reviews")
-            try:
-                recent_reviews = Review.objects.select_related('user', 'service').order_by('-created_at')[:3]
-                review_data = ReviewSerializer(recent_reviews, many=True).data
-            except Exception as e:
-                logger.error(f"Error serializing reviews: {str(e)}")
-                review_data = []
-            
-            # Recent messages with error handling
-            logger.debug("Querying recent messages")
-            try:
-                recent_messages = ContactUs.objects.order_by('-sent_at')[:5]
-                message_data = ContactUsSerializer(recent_messages, many=True).data
-            except Exception as e:
-                logger.error(f"Error serializing messages: {str(e)}")
-                message_data = []
-            
-            # Collect statistics with error handling
-            logger.debug("Querying stats")
-            stats = {}
-            try:
-                stats["total_bookings"] = Booking.objects.count()
-                stats["pending_bookings"] = Booking.objects.filter(status="pending").count()
-                stats["completed_bookings"] = Booking.objects.filter(status="completed").count()
-                stats["cancelled_bookings"] = Booking.objects.filter(status="canceled").count()
-                stats["total_services"] = Service.objects.count()
-                stats["total_users"] = CustomUser.objects.count()
-            except Exception as e:
-                logger.error(f"Error getting statistics: {str(e)}")
-            
+            # Add a simple test response to see if the endpoint is accessible at all
+            # If this works, we can gradually add more functionality back
             return Response({
-                "stats": stats,
-                "recent_bookings": booking_data,
-                "recent_reviews": review_data,
-                "recent_messages": message_data
+                "status": "API endpoint is working",
+                "stats": {
+                    "total_bookings": 0,
+                    "pending_bookings": 0,
+                    "completed_bookings": 0,
+                    "cancelled_bookings": 0
+                },
+                "recent_bookings": [],
+                "recent_reviews": [],
+                "recent_messages": []
             })
             
         except Exception as e:
-            logger.error(f"Dashboard overview error: {str(e)}")
+            logger.error(f"Dashboard overview error: {str(e)}", exc_info=True)  # Add exc_info for stack trace
             return Response(
-                {"error": "Failed to load dashboard data. Please try again."},
+                {"error": f"Failed to load dashboard data: {str(e)}"},  # Include the actual error
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
