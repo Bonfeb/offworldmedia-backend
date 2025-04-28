@@ -25,9 +25,18 @@ class Service(models.Model):
         ('audio', 'Audio Recording'),
         ('photo', 'Photo Shooting'),
     ]
+
+    AUDIO_SUBCATEGORY_CHOICES = [
+        ('beat_making', 'Beat Making'),
+        ('sound_recording', 'Sound Recording'),
+        ('mixing', 'Mixing'),
+        ('mastering', 'Mastering'),
+        ('music_video', 'Music Video Production'),
+    ]
     
     name = models.CharField(max_length=100)
-    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    audio_category = models.CharField(max_length=20, choices=AUDIO_SUBCATEGORY_CHOICES)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = CloudinaryField('service_images', blank=True, null=True)
@@ -35,6 +44,12 @@ class Service(models.Model):
     class Meta:
         verbose_name = "Service"
         verbose_name_plural = "Services"
+
+    def save(self, *args, **kwargs):
+        if self.category == 'audio' and not self.audio_category:
+            raise ValueError("Music production services must have a subcategory.")
+        super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.name

@@ -23,6 +23,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 from datetime import timedelta
+from collections import defaultdict
 import traceback, logging
 from rest_framework.exceptions import ValidationError
 from .models import *
@@ -233,8 +234,10 @@ class ServiceView(APIView):
                 return Response({"error": "Service Not Found"}, status=status.HTTP_404_NOT_FOUND)
             
         services = Service.objects.all()
-            
-        services = Service.objects.all()
+        grouped_services = defaultdict(lambda: defaultdict(list))
+        for service in services:
+            grouped_services[service.category][service.subcategory].append(ServiceSerializer(service).data)
+
         if request.user.is_staff:
             audio_recording = services.filter(category='audio')
             video_recording = services.filter(category='video')
@@ -243,7 +246,8 @@ class ServiceView(APIView):
             services_data = {
                 "audio_recording": ServiceSerializer(audio_recording, many=True).data,
                 "video_recording": ServiceSerializer(video_recording, many=True).data,
-                "photo_shooting": ServiceSerializer(photo_shooting, many=True).data
+                "photo_shooting": ServiceSerializer(photo_shooting, many=True).data,
+                "grouped_services": dict(grouped_services)  # Convert defaultdict to regular dict for JSON serialization
                 }
             
             return Response({"services": services_data}, status=status.HTTP_200_OK)
