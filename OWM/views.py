@@ -253,7 +253,7 @@ class ServiceView(APIView):
             return Response({"services": services_data}, status=status.HTTP_200_OK)
         
         serializer = ServiceSerializer(services, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"services": serializer.data}, status=status.HTTP_200_OK)
     
     def post(self, request):
         """Handle POST requests - create service"""
