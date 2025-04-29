@@ -102,7 +102,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     class Meta:
         model = Service
-        fields = ['id', 'name', 'category', 'description', 'price', 'image']
+        fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image']
     
     def get_image(self, obj):
         if obj.image:
