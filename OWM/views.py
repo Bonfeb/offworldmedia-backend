@@ -236,24 +236,13 @@ class ServiceView(APIView):
         services = Service.objects.all()
         grouped_services = defaultdict(lambda: defaultdict(list))
         for service in services:
-            grouped_services[service.category][service.subcategory].append(ServiceSerializer(service).data)
+            grouped_services[service.category][service.audio_category].append(ServiceSerializer(service).data)
 
-        if request.user.is_staff:
-            audio_recording = services.filter(category='audio')
-            video_recording = services.filter(category='video')
-            photo_shooting = services.filter(category='photo')
-
-            services_data = {
-                "audio_recording": ServiceSerializer(audio_recording, many=True).data,
-                "video_recording": ServiceSerializer(video_recording, many=True).data,
-                "photo_shooting": ServiceSerializer(photo_shooting, many=True).data,
-                "grouped_services": dict(grouped_services)  # Convert defaultdict to regular dict for JSON serialization
-                }
-            
-            return Response(services_data, status=status.HTTP_200_OK)  # Return direct object instead of nested
-        
-        serializer = ServiceSerializer(services, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return direct array instead of nested
+        response_data = {
+            "services": serializer.data,  # Flat list of all services
+            "grouped_services": dict(grouped_services)  # Convert defaultdict to regular dict
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
     
     def post(self, request):
         """Handle POST requests - create service"""
