@@ -250,10 +250,10 @@ class ServiceView(APIView):
                 "grouped_services": dict(grouped_services)  # Convert defaultdict to regular dict for JSON serialization
                 }
             
-            return Response({"services": services_data}, status=status.HTTP_200_OK)
+            return Response(services_data, status=status.HTTP_200_OK)  # Return direct object instead of nested
         
         serializer = ServiceSerializer(services, many=True)
-        return Response({"services": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return direct array instead of nested
     
     def post(self, request):
         """Handle POST requests - create service"""
