@@ -108,6 +108,20 @@ class ServiceSerializer(serializers.ModelSerializer):
         if obj.image:
             return obj.image.url
         return None
+    
+    def validate(self, data):
+        category = data.get("category")
+        audio_category = data.get("audio_category")
+
+        if category == "audio" and not audio_category:
+            raise serializers.ValidationError({
+                "audio_category": "Audio category is required for audio services."
+            })
+
+        if category != "audio":
+            data["audio_category"] = None  # Ensure it's null for video/photo
+
+        return data
 
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField(read_only=True)  # Auto-fill user

@@ -234,12 +234,20 @@ class ServiceView(APIView):
                 return Response({"error": "Service Not Found"}, status=status.HTTP_404_NOT_FOUND)
             
         services = Service.objects.all()
-        serializer = ServiceSerializer(services, many=True)
+        serialized_services = ServiceSerializer(services, many=True).data
 
         grouped_services = defaultdict(lambda: defaultdict(list))
-        for service in services:
-            subcategory = service.audio_category if service.audio_category else "general"
-            grouped_services[service.category][subcategory].append(ServiceSerializer(service).data)
+        for service_data in serialized_services:
+            if category == 'audio':
+                audio_category = service_data['audio_category']
+                if audio_category:
+                   grouped_services[category][audio_category].append(service_data)
+                else:
+                    default_subcategory = f"{service.category}_services"
+                    grouped_services[category][default_subcategory].append(service_data)
+            else:
+                default_subcategory = f"{service.category}_services"
+                grouped_services[category][default_subcategory].append(service_data)
 
         formatted_grouped_services = {}
         for category, subcategories in grouped_services.items():
