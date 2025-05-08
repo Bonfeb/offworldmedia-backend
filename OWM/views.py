@@ -223,7 +223,7 @@ class UserProfileView(APIView):
 class ServiceView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, pk=None):
+    def get(self, request, pk=None):
         if pk is not None:
             try:
                 service = Service.objects.get(pk=pk)
