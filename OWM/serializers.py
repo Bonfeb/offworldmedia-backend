@@ -100,7 +100,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class ServiceSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
-    audio_category = serializers.ChoiceField(choices=Service.AUDIO_SUBCATEGORY_CHOICES, required=False)
+    audio_category = serializers.ChoiceField(choices=Service.AUDIO_SUBCATEGORY_CHOICES, required=False, allow_null=True)
     category = serializers.ChoiceField(choices=Service.CATEGORY_CHOICES, required=True)
 
     class Meta:

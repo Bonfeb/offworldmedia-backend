@@ -46,10 +46,9 @@ class Service(models.Model):
         verbose_name_plural = "Services"
 
     def save(self, *args, **kwargs):
-        if self.category == 'audio' and not self.audio_category:
-            raise ValueError("Music production services must have a subcategory.")
+        if self.category != 'audio':
+            self.audio_category = None
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return self.name
