@@ -131,7 +131,11 @@ DATABASES = {
         default=config("DATABASE_URL"),
         conn_max_age=600,
         ssl_require=True,
-        )
+        ),
+        'OPTIONS': {
+            'sslmode': 'require',  # Enforce SSL
+            'connect_timeout': 5,  # Add timeout
+        }
 }
 
 #DATABASES = {
