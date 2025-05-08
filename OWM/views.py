@@ -238,6 +238,7 @@ class ServiceView(APIView):
 
         grouped_services = defaultdict(lambda: defaultdict(list))
         for service_data in serialized_services:
+            category = service_data['category']
             if category == 'audio':
                 audio_category = service_data['audio_category']
                 if audio_category:
