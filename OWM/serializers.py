@@ -100,6 +100,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class ServiceSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
+    audio_category = serializers.ChoiceField(choices=Service.AUDIO_SUBCATEGORY_CHOICES, required=False)
+    category = serializers.ChoiceField(choices=Service.CATEGORY_CHOICES, required=True)
+
     class Meta:
         model = Service
         fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image']
@@ -114,6 +117,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         audio_category = data.get("audio_category")
 
         if category == "audio" and not audio_category:
+            # If category is audio, audio_category must be provided
             raise serializers.ValidationError({
                 "audio_category": "Audio category is required for audio services."
             })
