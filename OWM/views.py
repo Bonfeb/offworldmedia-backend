@@ -238,9 +238,9 @@ class ServiceView(APIView):
 
         grouped_services = defaultdict(lambda: defaultdict(list))
         for service_data in serialized_services:
-            category = service_data['category']
+            category = service_data.get('category')
             if category == 'audio':
-                audio_category = service_data['audio_category']
+                audio_category = service_data.get('audio_category')
                 if audio_category:
                    grouped_services[category][audio_category].append(service_data)
                 else:
