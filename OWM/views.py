@@ -247,7 +247,7 @@ class ServiceView(APIView):
                     default_subcategory = f"{category}_services"
                     grouped_services[category][default_subcategory].append(service_data)
             else:
-                default_subcategory = f"{service.category}_services"
+                default_subcategory = f"{category}_services"
                 grouped_services[category][default_subcategory].append(service_data)
 
         formatted_grouped_services = {
