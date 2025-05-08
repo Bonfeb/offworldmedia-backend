@@ -223,7 +223,7 @@ class UserProfileView(APIView):
 class ServiceView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, pk=None):
+    def get(self, pk=None):
         if pk is not None:
             try:
                 service = Service.objects.get(pk=pk)
@@ -244,18 +244,18 @@ class ServiceView(APIView):
                 if audio_category:
                    grouped_services[category][audio_category].append(service_data)
                 else:
-                    default_subcategory = f"{service.category}_services"
+                    default_subcategory = f"{category}_services"
                     grouped_services[category][default_subcategory].append(service_data)
             else:
                 default_subcategory = f"{service.category}_services"
                 grouped_services[category][default_subcategory].append(service_data)
 
-        formatted_grouped_services = {}
-        for category, subcategories in grouped_services.items():
-            formatted_grouped_services[category] = dict(subcategories)
+        formatted_grouped_services = {
+            cat: dict(subs) for cat, subs in grouped_services.items()
+        }
 
         response_data = {
-            "services": serializer.data,  # Flat list of all services
+            "services": serialized_services,  # Flat list of all services
             "grouped_services": formatted_grouped_services  # Grouped by category and subcategory
         }
         
