@@ -70,6 +70,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
         request = self.context.get("request")  # Get request context for full URL
         if hasattr(instance, "profile_pic") and instance.profile_pic:
             profile_pic_url = instance.profile_pic.url
+            if profile_pic_url.startswith("http://"):
+                profile_pic_url = profile_pic_url.replace("http://", "https://")
             if request:
                 profile_pic_url = request.build_absolute_uri(profile_pic_url)
             representation["profile_pic"] = profile_pic_url
@@ -109,7 +111,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            return obj.image.url.replace("http://", "https://")
         return None
     
     def validate(self, data):
@@ -238,5 +240,5 @@ class TeamMemberSerializer(serializers.ModelSerializer):
 
     def get_profile_pic(self, obj):
         if obj.profile_pic:
-            return obj.profile_pic.url
+            return obj.profile_pic.url.replace("http://", "https://")
         return None

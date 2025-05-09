@@ -221,7 +221,4 @@ cloudinary.config(
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-print("Cloudinary name:", config("CLOUDINARY_NAME", default="Not Found"))
-print("Cloudinary key:", config("CLOUDINARY_API_KEY", default="Not Found"))
-print("Cloudinary secret:", config("CLOUDINARY_API_SECRET", default="Not Found"))
 
