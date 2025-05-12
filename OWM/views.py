@@ -284,8 +284,16 @@ class ServiceView(APIView):
 
     def delete(self, request, pk=None):
         service = get_object_or_404(Service, pk=pk)
-        service.delete()
-        return Response({"message": "Service deleted successfully"}, status=204)
+        user = request.user
+
+        if not (user.is_staff and user.is_authenticated):
+            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            service.delete()
+            return Response({"message": "Service deleted successfully"}, status=204)
+        except Exception as e:
+            return Response({"error": "Error deleting service", "details": str(e)}, status=500)
 
 # Booking API
 class BookingListCreateView(generics.ListCreateAPIView):
@@ -463,6 +471,12 @@ class BookingView(APIView):
                 {"error": "Service already booked on this date."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        if booking.user != request.user:
+            return Response(
+                {"error": "You do not have permission to edit this booking."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = BookingSerializer(booking, data=data, partial=True, context={"request": request})
         if serializer.is_valid():
@@ -485,9 +499,11 @@ class BookingView(APIView):
             return Response(
                 {"error": "You do not have permission to delete a booking whose statsus is not Pending"}, status=status.HTTP_403_FORBIDDEN
                 )
-        
-        booking.delete()
-        return Response({"message": "Booking deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        try:
+            booking.delete()
+            return Response({"message": "Booking deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"error": "Error deleting booking", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #User Dashboard View
 class UserDashboardView(APIView):
@@ -538,7 +554,7 @@ class UserDashboardView(APIView):
 class ContactUsView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self, request):
-        serializer = ContactUsSerializer
+        serializer = ContactUsSerializer()
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
@@ -561,14 +577,13 @@ class ContactUsView(APIView):
             Message:
             {contact_message.message}
             """
-            studio_email = settings.DEFAULT_FROM_EMAIL  # Ensure this is set in settings.py
-            
+            studio_email = settings.DEFAULT_FROM_EMAIL  
             try:
                 send_mail(
                     subject,
                     message,
                     settings.DEFAULT_FROM_EMAIL,
-                    [studio_email],  # Change this to the studio owner's email
+                    [studio_email], 
                     fail_silently=False
                 )
             except Exception as e:
@@ -580,7 +595,24 @@ class ContactUsView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, pk):
-        pass
+        contact_us = get_object_or_404(ContactUs, pk=pk)
+        serializer = ContactUsSerializer(contact_us, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Message Status Updated Successfully!", status=status.HTTP_200_OK)
+        
+        return Response("Could not Update Message Status! Try Again!", status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        contact_us = get_object_or_404(ContactUs, pk=pk)
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            contact_us.delete()
+            return Response({"message": "Contact Message deleted Successfully!"}, status=204)
+        except:
+            return Response({"message": "Error deleting Contact Message!"})
 
 # Review API
 class ReviewView(APIView):
@@ -611,7 +643,37 @@ class ReviewView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class TeamListView(APIView):
+    def put(self, request, pk):
+        user = request.user
+        if not user.is_authenticated:
+            return Response("Please Login to update Review", status=status.HTTp_400_BAD_REQUEST)
+        
+        review = get_object_or_404(Review, pk=pk)
+        if review.user != user and not user.is_staff:
+            return Response("You do not have permission to update this review", status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = ReviewSerializer(review, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        user = request.user
+        
+        review = get_object_or_404(Review, pk=pk)
+        if not user.is_staff:
+            return Response("You do not have permission to delete this review", status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            review.delete()
+            return Response({"message": "Review deleted Successfully!"}, status=204)
+        except:
+            return Response({"message": "Error deleting Review!"})
+    
+class TeamView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
@@ -619,11 +681,35 @@ class TeamListView(APIView):
         serializer = TeamMemberSerializer(member, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-class TestView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request, pk=None, *args, **kwargs):
-        return Response({"pk": pk}, status=status.HTTP_200_OK)
-        
+    def post(self, request):
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = TeamMemberSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk):
+        member = get_object_or_404(TeamMember, pk=pk)
+        serializer = TeamMemberSerializer(member, data=request.data, partial=True)
+
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.request.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        member = get_object_or_404(TeamMember, pk=pk)
+        try:
+            member.delete()
+            return Response({"message": "Team Member deleted Successfully!"}, status=204)
+        except:
+            return Response({"message": "Error deleting Team Member!"})
 #Admin Views
 class AdminDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -668,6 +754,23 @@ class AdminDashboardView(APIView):
             return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
 
         booking = get_object_or_404(Booking, pk=pk)
+        data = request.data.copy()
+        data["user"] = request.user.id  # Ensure the correct user is set
+
+        service_id = data.get("service")
+        event_date = parse_date(data.get("event_date"))
+        event_time = parse_time(data.get("event_time"))
+
+        existing_booking = Booking.objects.filter(
+            service_id=service_id, event_date=event_date, event_time=event_time
+        ).exclude(pk=pk).exists()
+
+        if existing_booking:
+            return Response(
+                {"error": "Service already booked on this date."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = BookingSerializer(
             booking, 
             data=request.data, 

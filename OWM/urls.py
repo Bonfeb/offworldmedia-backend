@@ -25,14 +25,12 @@ urlpatterns = [
     path('services/', ServiceView.as_view(), name='service-list'),
     path('service/', ServiceView.as_view()),
     path('service/<int:pk>/', ServiceView.as_view(), name='service'),
-
-    #handles listing all bookings
-    path('bookings/', BookingView.as_view(), name='booking-list'),
-    #handles create, update and delete booking
+ 
+    path('bookings/', BookingView.as_view(), name='booking'),
     path('booking/<int:pk>/', BookingView.as_view(), name='booking'),
     
     # TeamMembers Endpoints
-    path('team/', TeamListView.as_view(), name='team'),
+    path('team/', TeamView.as_view(), name='team'),
 
     # Review Endpoints
     path('reviews/', ReviewView.as_view(), name='review-list'),
@@ -41,8 +39,6 @@ urlpatterns = [
     #Contact Endpoints
     path('contactus/', ContactUsView.as_view(), name='contactus'),
     path('contactus/<int:pk>/', ContactUsView.as_view()),
-
-    path('test/<int:pk>/', TestView.as_view(), name='test'),
 
     #Admin Dashboard paths
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
