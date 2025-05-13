@@ -21,7 +21,7 @@ urlpatterns = [
     path('userdashboard/', UserDashboardView.as_view(), name="userdashboard"),
     path('userdashboard/<int:pk>/', UserDashboardView.as_view(), name="userdashboard"),
 
-    # Service Endpoints
+    # Service Endpoints 
     path('services/', ServiceView.as_view(), name='service-list'),
     path('service/', ServiceView.as_view()),
     path('service/<int:pk>/', ServiceView.as_view(), name='service'),
