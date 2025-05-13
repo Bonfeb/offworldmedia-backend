@@ -17,6 +17,8 @@ from django.core.mail import send_mail
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
@@ -147,18 +149,37 @@ class ForgotPasswordView(APIView):
             return Response({"error": "Something went wrong"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+    
     def post(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = CustomUser.objects.get(pk=uid)
-            if default_token_generator.check_token(user, token):
-                password = request.data.get("password")
-                user.set_password(password)
-                user.save()
-                return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
-            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not default_token_generator.check_token(user, token):
+                return Response({"error": "Invalid or expired token"}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+                
+            password = request.data.get("password")
+            
+            # Validate password strength
+            try:
+                validate_password(password, user)
+            except ValidationError as e:
+                return Response({"error": e.messages}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+            
+            user.set_password(password)
+            user.save()
+            return Response({"message": "Password reset successful"}, 
+                          status=status.HTTP_200_OK)
+            
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            return Response({"error": "Invalid user"}, 
+                          status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
