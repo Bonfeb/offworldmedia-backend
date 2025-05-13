@@ -152,6 +152,10 @@ class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request, uidb64, token):
+        print(f"\n=== Received reset request ===")
+        print(f"uidb64: {uidb64}")
+        print(f"token: {token}")
+        print(f"request data: {request.data}")
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = CustomUser.objects.get(pk=uid)
@@ -182,18 +186,31 @@ class ResetPasswordView(APIView):
                           status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def put(self, request):
+        print("\n=== Password Change Request ===") 
+        print(f"User: {request.user.email}") 
+
         user = request.user
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
         if not user.check_password(old_password):
+            print("Old password validation failed")
             return Response({"error": "Old password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate new password strength
+        try:
+            validate_password(new_password, user)
+        except ValidationError as e:
+            print(f"New password validation failed: {e.messages}")
+            return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
+        print("Password changed successfully")
+        
         return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
 
 #Custom Token Refresh View
