@@ -123,6 +123,7 @@ class LogoutView(APIView):
         return response
 
 class ForgotPasswordView(APIView):
+    permisssion_classes = [AllowAny]
     CustomUser = get_user_model()
     def post(self, request):
         email = request.data.get("email")
