@@ -595,23 +595,27 @@ class UserDashboardView(APIView):
         return Response({"message": "Item removed from cart", "cart": CartSerializer(Cart.objects.filter(user=user), many=True).data}, status=status.HTTP_200_OK)
 
 class ContactUsView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
     def get(self, request):
         serializer = ContactUsSerializer()
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-        # Automatically fill user details
-        request.data["first_name"] = request.user.first_name
-        request.data["last_name"] = request.user.last_name
-        request.data["email"] = request.user.email
+        data = request.data.copy()
 
-        serializer = ContactUsSerializer(data=request.data)
+        if request.user.is_authenticated:
+            data.update({
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "email": request.user.email,
+                "user": request.user.id
+            })
+
+        serializer = ContactUsSerializer(data=data)
         if serializer.is_valid():
             contact_message = serializer.save()
 
-            # Send email notification
-            subject = f"New Contact Message from {contact_message.name}"
+            subject = f"New Contact Message from {contact_message.first_name} {contact_message.last_name}"
             message = f"""
             Name: {contact_message.first_name} {contact_message.last_name}
             Email: {contact_message.email}
@@ -620,23 +624,28 @@ class ContactUsView(APIView):
             Message:
             {contact_message.message}
             """
-            studio_email = settings.DEFAULT_FROM_EMAIL  
+
+            studio_email = settings.DEFAULT_FROM_EMAIL
+            user_email = contact_message.email
+
             try:
                 send_mail(
                     subject,
                     message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [studio_email], 
+                    studio_email,
+                    recipient_list=[user_email],
                     fail_silently=False
                 )
+
+                return Response({"message": "Your message has been sent successfully!"},
+                                status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({"error": "Message saved, but email could not be sent.", "details": str(e)},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            return Response({"message": "Your message has been sent!"}, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
     def put(self, request, pk):
         contact_us = get_object_or_404(ContactUs, pk=pk)
         serializer = ContactUsSerializer(contact_us, data=request.data, partial=True)
