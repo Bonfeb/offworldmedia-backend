@@ -379,106 +379,73 @@ class BookingView(APIView):
         return Response({"user_bookings": serializer.data}, status=status.HTTP_200_OK)
         
     def post(self, request, *args, **kwargs):
-        user=request.user
-        pk = kwargs.get("pk")
-        print(f"pk: {pk}")  # Debug: Check if pk is being passed correctly
-        print(f"kwargs: {kwargs}")  # Debug: Check all kwargs
-        print(f"request data: {request.data}")  # Debug: Check request payload
-        if pk is None:
-            """
-            Adds a service to the cart and stores event details.
-            """
-            service_id = request.data.get("service_id")
-            event_date = request.data.get("event_date")
-            event_time = request.data.get("event_time")
-            event_location = request.data.get("event_location")
+        """Handles booking creation."""
+        user = request.user
+        service_id = kwargs.get("pk")  # pk is provided in the URL, meaning we're booking this service
+        print(f"Service ID from URL: {service_id}")
+        print(f"User: {user}")
+        if not service_id:
+            return Response({"error": "Service ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        cart_item = Cart.objects.filter(user=user, service_id=service_id).first()
+        if not cart_item:
+            return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
 
-            if not service_id or not event_date or not event_time or not event_location:
-                return Response({"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Extract event details from the cart item
+        event_date = cart_item.event_date
+        event_time = cart_item.event_time
+        event_location = cart_item.event_location
 
-            service = Service.objects.filter(id=service_id).first()
+        if not event_date or not event_time or not event_location:
+            return Response({"error": "Missing event details"}, status=status.HTTP_400_BAD_REQUEST)
 
-            if not service:
-                return Response({"error": "Service not found."}, status=status.HTTP_404_NOT_FOUND)
-            
-            cart_item = Cart.objects.create(
-                user = user,
-                service = service,
-                event_date = event_date,
-                event_location = event_location,
-                event_time = event_time
-            )
+        existing_booking = Booking.objects.filter(
+        service_id=service_id, event_date=event_date, event_time=event_time
+    ).exclude(pk=pk).exists()
 
+        if existing_booking:
             return Response(
-                {"message": "Event details saved and service added to cart!", "cart_item": CartSerializer(cart_item).data},
-                status=status.HTTP_201_CREATED
-            )
+            {"error": "Service already booked on this date."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-        else:
-            #CASE 2: Create a booking from the cart when "Book" is clicked
-            service_id = pk  # pk is provided in the URL, meaning we're booking this service
-            print(f"Service ID from URL: {service_id}")
-            print(f"User: {user}")
-            cart_item = Cart.objects.filter(user=user, service_id=service_id).first()
-            if not cart_item:
-                return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
+        # Create a booking
+        booking = Booking.objects.create(
+            user=user,
+            service=cart_item.service,
+            event_date=event_date,
+            event_time=event_time,
+            event_location=event_location
+        )
 
-            # Extract event details from the cart item
-            event_date = cart_item.event_date
-            event_time = cart_item.event_time
-            event_location = cart_item.event_location
+        cart_item.delete()
 
-            if not event_date or not event_time or not event_location:
-                return Response({"error": "Missing event details"}, status=status.HTTP_400_BAD_REQUEST)
+        # Get all admin/staff emails
+        admin_emails = list(CustomUser.objects.filter(
+            is_staff=True
+        ).values_list('email', flat=True))
+        
+        # Prepare booking details for frontend
+        booking_details = {
+            'id': booking.id,
+            'user_name': user.get_full_name(),
+            'user_email': user.email,
+            'service_name': booking.service.name,
+            'event_date': booking.event_date,
+            'event_time': booking.event_time,
+            'event_location': booking.event_location,
+            'created_at': booking.created_at,
+            'admin_emails': admin_emails
+        }
 
-            existing_booking = Booking.objects.filter(
-            service_id=service_id, event_date=event_date, event_time=event_time
-        ).exclude(pk=pk).exists()
-
-            if existing_booking:
-                return Response(
-                {"error": "Service already booked on this date."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-            # Create a booking
-            booking = Booking.objects.create(
-                user=user,
-                service=cart_item.service,
-                event_date=event_date,
-                event_time=event_time,
-                event_location=event_location
-            )
-
-            # Get all admin/staff emails
-            admin_emails = list(CustomUser.objects.filter(
-                is_staff=True
-            ).values_list('email', flat=True))
-            
-            # Prepare booking details for frontend
-            booking_details = {
-                'id': booking.id,
-                'user_name': user.get_full_name(),
-                'user_email': user.email,
-                'service_name': booking.service.name,
-                'event_date': booking.event_date,
-                'event_time': booking.event_time,
-                'event_location': booking.event_location,
-                'created_at': booking.created_at,
-                'admin_emails': admin_emails
-            }
-
-            # Remove the item from the cart after successful booking
-            cart_item.delete()
-
-            return Response(
-                {
-                    "message": "Service successfully booked!", 
-                    "booking": BookingSerializer(booking).data,
-                    "booking_details": booking_details,
-                },
-                status=status.HTTP_201_CREATED
-            )
+        return Response(
+            {
+                "message": "Service successfully booked!", 
+                "booking": BookingSerializer(booking).data,
+                "booking_details": booking_details,
+            },
+            status=status.HTTP_201_CREATED
+        )
 
     def put(self, request, pk):
         """Updates an existing booking's event details."""
@@ -593,6 +560,37 @@ class UserDashboardView(APIView):
         cart_item.delete()
 
         return Response({"message": "Item removed from cart", "cart": CartSerializer(Cart.objects.filter(user=user), many=True).data}, status=status.HTTP_200_OK)
+    
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        service_id = request.data.get("service_id")
+        event_date = request.data.get("event_date")
+        event_time = request.data.get("event_time")
+        event_location = request.data.get("event_location")
+
+        if not service_id or not event_date or not event_time or not event_location:
+            return Response({"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        service = Service.objects.filter(id=service_id).first()
+
+        if not service:
+            return Response({"error": "Service not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        cart_item = Cart.objects.create(
+            user=user,
+            service=service,
+            event_date=event_date,
+            event_location=event_location,
+            event_time=event_time
+        )
+
+        return Response(
+            {
+                "message": "Event details saved and service added to cart!",
+                "cart_item": CartSerializer(cart_item).data
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 class ContactUsView(APIView):
     permission_classes = [AllowAny]
