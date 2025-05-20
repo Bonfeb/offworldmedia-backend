@@ -110,9 +110,22 @@ class ServiceSerializer(serializers.ModelSerializer):
         fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image']
     
     def get_image(self, obj):
-        if obj.image:
-            return obj.image.url.replace("http://", "https://")
-        return None
+        if not obj.image:
+            return None
+        
+        image_url = obj.image.url
+        
+        # Cloudinary-specific handling
+        if 'res.cloudinary.com' in image_url:
+            # Ensure HTTPS for Cloudinary
+            return image_url.replace('http://', 'https://')
+        
+        # Regular handling
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(image_url)
+        
+        return image_url
     
     def validate(self, data):
         category = data.get("category")
