@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.fields import ImageField
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
 
@@ -101,13 +102,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class ServiceSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    image = ImageField(required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField()
     audio_category = serializers.ChoiceField(choices=Service.AUDIO_SUBCATEGORY_CHOICES, required=False, allow_null=True)
     category = serializers.ChoiceField(choices=Service.CATEGORY_CHOICES, required=True)
 
     class Meta:
         model = Service
-        fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image']
+        fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image', 'image_url']
     
     def get_image(self, obj):
         if not obj.image:

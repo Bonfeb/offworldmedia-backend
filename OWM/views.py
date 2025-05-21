@@ -263,21 +263,21 @@ class UserProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Service List & Detail View
-class ServiceView(APIView):
+class ServiceView(APIView): 
     permission_classes = [AllowAny]
 
     def get(self, request, pk=None):
         if pk is not None:
             try:
                 service = Service.objects.get(pk=pk)
-                serializer = ServiceSerializer(service)
+                serializer = ServiceSerializer(service, context={'request': request})
                 
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except Service.DoesNotExist:
                 return Response({"error": "Service Not Found"}, status=status.HTTP_404_NOT_FOUND)
             
         services = Service.objects.all()
-        serialized_services = ServiceSerializer(services, many=True).data
+        serialized_services = ServiceSerializer(services, many=True, context={'request': request}).data
 
         grouped_services = defaultdict(lambda: defaultdict(list))
         for service_data in serialized_services:
