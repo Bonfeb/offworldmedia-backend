@@ -26,7 +26,7 @@ from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
-import traceback, logging
+import logging
 from rest_framework.exceptions import ValidationError
 from .models import *
 from .serializers import *
