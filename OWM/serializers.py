@@ -102,32 +102,32 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class ServiceSerializer(serializers.ModelSerializer):
-    image = ImageField(required=False, allow_null=True)
-    image_url = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    description = serializers.CharField(required=False, allow_blank=True)
     audio_category = serializers.ChoiceField(choices=Service.AUDIO_SUBCATEGORY_CHOICES, required=False, allow_null=True)
     category = serializers.ChoiceField(choices=Service.CATEGORY_CHOICES, required=True)
 
     class Meta:
         model = Service
-        fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image', 'image_url']
+        fields = ['id', 'name','audio_category', 'category', 'description', 'price', 'image']
     
     def get_image(self, obj):
         if not obj.image:
             return None
         
-        image_url = obj.image.url
+        image = obj.image.url
         
         # Cloudinary-specific handling
-        if 'res.cloudinary.com' in image_url:
+        if 'res.cloudinary.com' in image:
             # Ensure HTTPS for Cloudinary
-            return image_url.replace('http://', 'https://')
+            return image.replace('http://', 'https://')
         
         # Regular handling
         request = self.context.get('request')
         if request:
-            return request.build_absolute_uri(image_url)
+            return request.build_absolute_uri(image)
         
-        return image_url
+        return image
     
     def validate(self, data):
         category = data.get("category")
@@ -248,10 +248,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class TeamMemberSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.SerializerMethodField()
+    profile_pic = serializers.ImageField(required=False, allow_null=True)
+    profile_pic_url = serializers.SerializerMethodField()
     class Meta:
         model = TeamMember
-        fields = ['id', 'name', 'role', 'profile_pic', 'bio']
+        fields = ['id', 'name', 'role', 'profile_pic','profile_pic_url', 'bio']
 
     def get_profile_pic(self, obj):
         if obj.profile_pic:

@@ -37,7 +37,7 @@ FRONTEND_URL = config("RENDER_FRONTEND_URL")
 
 AUTH_USER_MODEL = 'OWM.CustomUser'
 
-# Application definition
+# Application definitiona
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'OWM',
+    'OWM.apps.OwmConfig',  # Ensure your app is included here
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',

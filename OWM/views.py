@@ -802,42 +802,69 @@ class AdminDashboardView(APIView):
         """Handle PUT requests - update booking"""
         if not request.user.is_staff:
             return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        booking_update = 'service' in request.data or 'event_date' in request.data or 'event_time' in request.data
 
-        booking = get_object_or_404(Booking, pk=pk)
-        data = request.data.copy()
-        data["user"] = request.user.id  # Ensure the correct user is set
+        user_update = 'username' in request.data or 'email' in request.data or 'first_name' in request.data
 
-        service_id = data.get("service")
-        event_date = parse_date(data.get("event_date"))
-        event_time = parse_time(data.get("event_time"))
+        if booking_update:
+            booking = get_object_or_404(Booking, pk=pk)
+            data = request.data.copy()
+            data["user"] = request.user.id  # Ensure the correct user is set
 
-        existing_booking = Booking.objects.filter(
-            service_id=service_id, event_date=event_date, event_time=event_time
-        ).exclude(pk=pk).exists()
+            service_id = data.get("service")
+            event_date = parse_date(data.get("event_date"))
+            event_time = parse_time(data.get("event_time"))
 
-        if existing_booking:
+            existing_booking = Booking.objects.filter(
+                service_id=service_id, event_date=event_date, event_time=event_time
+            ).exclude(pk=pk).exists()
+
+            if existing_booking:
+                return Response(
+                    {"error": "Service already booked on this date."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            serializer = BookingSerializer(
+                booking, 
+                data=request.data, 
+                partial=True, 
+                context={'request': request}
+            )
+            if serializer.is_valid():
+                if 'user_id' not in request.data:
+                    serializer.validated_data['user'] = booking.user
+
+                updated_booking = serializer.save()
+                return Response(
+                    BookingSerializer(updated_booking, context={'request': request}).data,
+                status=status.HTTP_200_OK
+                    )
             return Response(
-                {"error": "Service already booked on this date."},
+                {"error": "Booking Update Failed", "details": serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        
+        elif user_update:
+            user = get_object_or_404(CustomUser, pk=pk)
+
+            profile_pic = request.FILES.get('profile_pic')
+            if profile_pic:
+                request.data['profile_pic'] = profile_pic
+
+            serializer = CustomUserSerializer(user, data=request.data, partial=True, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {"error": "User Update Failed", "details": serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                {"error": "Invalid request: Specify either booking or user data to update"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        serializer = BookingSerializer(
-            booking, 
-            data=request.data, 
-            partial=True, 
-            context={'request': request}
-        )
-        if serializer.is_valid():
-            if 'user_id' not in request.data:
-                serializer.validated_data['user'] = booking.user
-
-            updated_booking = serializer.save()
-            return Response(
-                BookingSerializer(updated_booking, context={'request': request}).data,
-            status=status.HTTP_200_OK
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
     def delete(self, request, pk):
         """Handle DELETE requests - delete booking"""
         if not request.user.is_staff:
