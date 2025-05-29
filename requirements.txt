@@ -1,6 +1,7 @@
 asgiref==3.8.1
 certifi==2025.1.31
 channels==4.2.0
+channels_redis==4.2.1
 charset-normalizer==3.4.1
 cloudinary==1.44.0
 dj-database-url==2.3.0
@@ -8,16 +9,19 @@ Django==5.1.5
 django-cloudinary-storage==0.3.0
 django-cors-headers==4.6.0
 django-environ==0.12.0
+django-filter==25.1
 djangorestframework==3.15.2
 djangorestframework_simplejwt==5.4.0
 gunicorn==23.0.0
 idna==3.10
+msgpack==1.1.0
 packaging==24.2
 pillow==11.1.0
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
 PyJWT==2.10.1
 python-decouple==3.8
+redis==5.2.1
 requests==2.32.3
 six==1.17.0
 sqlparse==0.5.3
