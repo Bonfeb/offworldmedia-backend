@@ -9,6 +9,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Case, When, Value, IntegerField
 from rest_framework import status
 from django.conf import settings
@@ -30,6 +31,7 @@ import logging
 from rest_framework.exceptions import ValidationError
 from .models import *
 from .serializers import *
+from .filters import *
 
 # User Registration View
 class RegisterView(APIView):
@@ -363,6 +365,7 @@ class BookingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk=None):
+    
         """Fetches either a specific booking (if `pk` is provided) or all user bookings."""
         if pk:
             try:
@@ -669,9 +672,12 @@ class ReviewView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        reviews = Review.objects.all()
-        queryset = Review.objects.select_related("service", "user").all()
-        serializer = ReviewSerializer(reviews, many=True)
+        reviews = Review.objects.select_related("service", "user").all()
+        if request.user.is_staff:
+            queryset = ReviewFilter(request.GET, queryset=reviews).qs
+        else:
+            queryset = reviews
+        serializer = ReviewSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, pk):
