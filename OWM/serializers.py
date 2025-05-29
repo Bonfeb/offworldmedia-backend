@@ -11,18 +11,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'username', 'email', 'phone', 'profile_pic', 'password', 'address']
         extra_kwargs = {'password': {'write_only': True, 'required': False}}  # Make password optional
 
-    def get(self, instance):
-        """Retrieve the authenticated user's profile"""
-        return {
-            "id": instance.id,
-            "username": instance.username,
-            "email": instance.email,
-            "first_name": instance.first_name,
-            "last_name": instance.last_name,
-            "profile_pic": instance.profile_pic.url if instance.profile_pic else None,
-            "phone": instance.phone,
-            "address": instance.address,
-        }
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if request and data.get("profile_pic"):
+            data["profile_pic"] = request.build_absolute_uri(data["profile_pic"])
+        data.pop("password", None)
+        return data
 
     def validate_email(self, value):
         """Ensure email is unique if changed"""
@@ -195,7 +190,7 @@ class BookingSerializer(serializers.ModelSerializer):
             if request is not None:
                 return request.build_absolute_uri(obj.service.image.url)  # ✅ Only use build_absolute_uri if request exists
             return obj.service.image.url  # ✅ Return relative URL if no request
-        return None  # ✅ Return None if no image
+        return None
 
 class CartSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source="service.name", read_only=True)
@@ -248,13 +243,36 @@ class ReviewSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class TeamMemberSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.ImageField(required=False, allow_null=True)
-    profile_pic_url = serializers.SerializerMethodField()
+    profile_pic = serializers.SerializerMethodField()
     class Meta:
         model = TeamMember
-        fields = ['id', 'name', 'role', 'profile_pic','profile_pic_url', 'bio']
+        fields = ['id', 'name', 'role', 'profile_pic', 'bio']
+        extra_kwargs = {
+            'profile_pic': {'required': False, 'allow_null': True}
+            }
 
     def get_profile_pic(self, obj):
-        if obj.profile_pic:
-            return obj.profile_pic.url.replace("http://", "https://")
-        return None
+        if not obj.profile_pic:
+            return None
+        
+        profile_pic = obj.profile_pic.url
+        
+        # Cloudinary-specific handling
+        if 'res.cloudinary.com' in profile_pic:
+            # Ensure HTTPS for Cloudinary
+            return profile_pic.replace('http://', 'https://')
+        
+        # Regular handling
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(profile_pic)
+        
+        return profile_pic
+    
+    def to_internal_value(self, data):
+        """Override to handle optional profile_pic"""
+        data = super().to_internal_value(data)
+        if 'profile_pic' in self.context['request'].FILES:
+            data['profile_pic'] = self.context['request'].FILES['profile_pic']
+
+        return data

@@ -83,7 +83,7 @@ class RegisterView(APIView):
 
 # Login View (JWT Token Generation)
 class LoginView(APIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = CustomTokenObtainPairSerializer(data=request.data, context={"request": request})
@@ -725,6 +725,7 @@ class ReviewView(APIView):
     
 class TeamView(APIView):
     permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
     
     def get(self, request):
         member = TeamMember.objects.all()
@@ -735,31 +736,31 @@ class TeamView(APIView):
         if not request.user.is_staff:
             return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = TeamMemberSerializer(data=request.data)
+        serializer = TeamMemberSerializer(data=request.data, files=request.FILES, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, pk):
-        member = get_object_or_404(TeamMember, pk=pk)
-        serializer = TeamMemberSerializer(member, data=request.data, partial=True)
-
         if not request.user.is_staff:
             return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        member = get_object_or_404(TeamMember, pk=pk)
+        serializer = TeamMemberSerializer(member, data=request.data, partial=True, context={'request': request})
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.request.data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
         member = get_object_or_404(TeamMember, pk=pk)
         try:
             member.delete()
-            return Response({"message": "Team Member deleted Successfully!"}, status=204)
-        except:
-            return Response({"message": "Error deleting Team Member!"})
+            return Response({"message": "Team Member deleted Successfully!"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": f"Error deleting Team Member:  {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 #Admin Views
 class AdminDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -812,7 +813,7 @@ class AdminDashboardView(APIView):
             data = request.data.copy()
             data["user"] = request.user.id  # Ensure the correct user is set
 
-            service_id = data.get("service")
+            service_id = data.get("service_id")
             event_date = parse_date(data.get("event_date"))
             event_time = parse_time(data.get("event_time"))
 
@@ -847,11 +848,9 @@ class AdminDashboardView(APIView):
         
         elif user_update:
             user = get_object_or_404(CustomUser, pk=pk)
-
-            profile_pic = request.FILES.get('profile_pic')
-            if profile_pic:
-                request.data['profile_pic'] = profile_pic
-
+            if not request.user.is_staff:
+                return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+            
             serializer = CustomUserSerializer(user, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
@@ -866,11 +865,8 @@ class AdminDashboardView(APIView):
             )
         
     def delete(self, request, pk):
-        """Handle DELETE requests - delete booking"""
         if not request.user.is_staff:
             return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
-
-        booking = get_object_or_404(Booking, pk=pk)
 
         confirm = request.query_params.get('confirm', 'false').lower() == 'true'
         if not confirm:
@@ -879,15 +875,38 @@ class AdminDashboardView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-        booking.delete()
-        return Response(
-            {
-                "success": True,
-                "message": f"Booking {pk} deleted successfully",
-                "deleted_at": timezone.now().isoformat()
-            },
-        status=status.HTTP_204_NO_CONTENT
-        )
+        model_type = request.query_params.get('type', 'booking')
+
+        if model_type == 'user':
+            try:
+                user = get_object_or_404(CustomUser, pk=pk)
+
+                if user == request.user:
+                    return Response({"error": "You cannot delet your own account here."}, status=status.HTTP_400_BAD_REQUEST)
+                if user.is_superuser and not request.user.is_superuser:
+                    return Response({"error": "Only superusers can delete other superusers"}, status=status.HTTP_403_FORBIDDEN)
+                user.delete()
+                return Response({
+                    "success": True,
+                    "message": f"User {user.username} deleted successfully!",
+                    "deleted_at": timezone.now().isoformat()
+                })
+            except Exception as e:
+                return Response({
+                    "error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+        else:
+            booking = get_object_or_404(Booking, pk=pk)
+            booking.delete()
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Booking {pk} deleted successfully",
+                    "deleted_at": timezone.now().isoformat()
+                },
+            status=status.HTTP_204_NO_CONTENT
+            )
 
     def _get_dashboard_overview(self):
         logger = logging.getLogger(__name__)

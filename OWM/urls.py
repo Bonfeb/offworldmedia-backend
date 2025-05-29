@@ -31,6 +31,7 @@ urlpatterns = [
     
     # TeamMembers Endpoints
     path('team/', TeamView.as_view(), name='team'),
+    path('team/<int:pk>/', TeamView.as_view(), name='team-member'),
 
     # Review Endpoints
     path('reviews/', ReviewView.as_view(), name='review-list'),
