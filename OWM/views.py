@@ -13,6 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Case, When, Value, IntegerField
 from rest_framework import status
 from django.conf import settings
+from django.core.paginator import Paginator
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly, IsAdminUser
@@ -1008,14 +1009,24 @@ class AdminDashboardView(APIView):
         """Return list of users or detailed info for a specific user"""
         user_id = self.request.query_params.get('id')
 
+        page = int(self.request.query_params.get('page', 1))
+        page_size = int(self.request.query_params.get('page_size', 10))
+
         users = CustomUser.objects.all()
         queryset = CustomUserFilter(self.request.GET, queryset=users).qs
         
         # If no specific user ID is provided, return all users
         if not user_id:
-            queryset = queryset.order_by('username')
-            serializer = CustomUserSerializer(queryset, many=True, context={'request': self.request})
-            return Response(serializer.data)
+            queryset = queryset.order_by('first_name')
+            paginator = Paginator(queryset, page_size)
+            users_page = paginator.get_page(page)
+            serializer = CustomUserSerializer(users_page, many=True, context={'request': self.request})
+            return Response({
+                'results': serializer.data,
+                'total': queryset.count(),
+                'page': page,
+                'page_size': page_size
+            })
         
         # If a specific user ID is provided, return detailed info for that user
         try:
