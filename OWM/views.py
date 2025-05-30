@@ -15,7 +15,7 @@ from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly, IsAdminUser
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
@@ -769,7 +769,7 @@ class TeamView(APIView):
             return Response({"message": f"Error deleting Team Member:  {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 #Admin Views
 class AdminDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]  # Custom permission class to restrict access to admins
 
     def get(self, request):
         """Handle all GET requests - dashboard stats, bookings, users, messages or reviews"""
@@ -1007,11 +1007,14 @@ class AdminDashboardView(APIView):
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
         user_id = self.request.query_params.get('id')
+
+        users = CustomUser.objects.all()
+        queryset = CustomUserFilter(self.request.GET, queryset=users).qs
         
         # If no specific user ID is provided, return all users
         if not user_id:
-            users = CustomUser.objects.all().order_by('first_name')
-            serializer = CustomUserSerializer(users, many=True)
+            queryset = queryset.order_by('username')
+            serializer = CustomUserSerializer(queryset, many=True, context={'request': self.request})
             return Response(serializer.data)
         
         # If a specific user ID is provided, return detailed info for that user
@@ -1022,7 +1025,7 @@ class AdminDashboardView(APIView):
             messages = ContactUs.objects.filter(user=user)
             
             # Serialize all data
-            user_data = CustomUserSerializer(user).data
+            user_data = CustomUserSerializer(user, context={'request': self.request}).data
             bookings_data = BookingSerializer(bookings, many=True).data
             reviews_data = ReviewSerializer(reviews, many=True).data
             messages_data = ContactUsSerializer(messages, many=True).data
