@@ -1007,13 +1007,18 @@ class AdminDashboardView(APIView):
 
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
+        print("Received request with params:", self.request.GET)
         user_id = self.request.query_params.get('id')
 
         page = int(self.request.query_params.get('page', 1))
         page_size = int(self.request.query_params.get('page_size', 10))
 
         users = CustomUser.objects.all()
+        print("Initial user queryset:", users.query)
+
         queryset = CustomUserFilter(self.request.GET, queryset=users).qs
+        print("Filtered user queryset:", queryset.query)
+        print("Filtered user count:", queryset.count())
         
         # If no specific user ID is provided, return all users
         if not user_id:
