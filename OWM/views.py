@@ -382,8 +382,8 @@ class BookingView(APIView):
             return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
 
         booking_data = {
-            "user": user.id,
-            "service": cart_item.service.id,
+            "user_id": user.id,
+            "service_id": cart_item.service.id,
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
             "event_location": cart_item.event_location,
@@ -405,7 +405,11 @@ class BookingView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        booking = serializer.save()
+        try:
+            booking = serializer.save()
+        except Exception as e:
+            print(f"Error saving booking: {str(e)}")
+            return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         cart_item.delete()
 
