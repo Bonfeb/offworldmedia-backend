@@ -387,7 +387,7 @@ class BookingView(APIView):
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
             "event_location": cart_item.event_location,
-            "status": "Pending"  # Default status for new bookings
+            "status": "pending"  # Default status for new bookings
         }
         serializer = BookingSerializer(data=booking_data, context={"request": request})
 
