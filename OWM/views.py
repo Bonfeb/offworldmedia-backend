@@ -382,12 +382,11 @@ class BookingView(APIView):
             return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
 
         booking_data = {
-            "user_id": user.id,
-            "service_id": cart_item.service.id,
+            "user": user.id,
+            "service": cart_item.service.id,
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
-            "event_location": cart_item.event_location,
-            "status": "pending"  # Default status for new bookings
+            "event_location": cart_item.event_location
         }
         serializer = BookingSerializer(data=booking_data, context={"request": request})
 
@@ -720,8 +719,12 @@ class ReviewView(APIView):
             return Response({"message": "Error deleting Review!"})
     
 class TeamView(APIView):
-    permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAdminUser(), IsAuthenticated()]
     
     def get(self, request):
         member = TeamMember.objects.all()
@@ -729,9 +732,6 @@ class TeamView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-        if not request.user.is_staff:
-            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
-
         serializer = TeamMemberSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()

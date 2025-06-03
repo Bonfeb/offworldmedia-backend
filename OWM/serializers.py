@@ -143,7 +143,7 @@ class BookingSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField(read_only=True)  # Auto-fill user
     user_id = serializers.IntegerField(write_only=True, required=False)
     phone = serializers.SerializerMethodField()
-    service = ServiceSerializer()
+    service = ServiceSerializer(read_only=True)  # Use ServiceSerializer to get full service details
     service_image_url = serializers.SerializerMethodField()
     service_id = serializers.IntegerField(write_only=True)
 
@@ -153,7 +153,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
     extra_kwargs = {
             'status': {'required': False},
-            'created_at': {'read_only': True}
+            'booked_at': {'read_only': True}
         }
     
     def get_user(self, obj):
@@ -195,6 +195,13 @@ class BookingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Event date and time are required")
         
         return data
+    
+    def create(self, validated_data):
+        validated_data['status'] = 'pending'
+
+        if 'user_id' in validated_data:
+            validated_data['user_id'] = self.context['request'].user.id
+        return super().create(validated_data)
 
     def get_service_image_url(self, obj):
         request = self.context.get('request')
