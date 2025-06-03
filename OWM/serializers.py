@@ -182,6 +182,18 @@ class BookingSerializer(serializers.ModelSerializer):
         elif not request.user.is_authenticated:
             raise serializers.ValidationError("Authentication required")
         
+        if 'event_date' in data and 'event_time' in data and 'service_id' in data:
+            existing_booking = Booking.objects.filter(
+                service_id=data['service_id'],
+                event_date=data['event_date'],
+                event_time=data['event_time'],
+            )
+
+            if existing_booking.exists():
+                raise serializers.ValidationError("This service is already booked for the selected date and time.")
+        else:
+            raise serializers.ValidationError("Event date and time are required")
+        
         return data
 
     def get_service_image_url(self, obj):
@@ -243,7 +255,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class TeamMemberSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.SerializerMethodField()
+    profile_pic = serializers.ImageField()
     class Meta:
         model = TeamMember
         fields = ['id', 'name', 'role', 'profile_pic', 'bio']
@@ -251,28 +263,20 @@ class TeamMemberSerializer(serializers.ModelSerializer):
             'profile_pic': {'required': False, 'allow_null': True}
             }
 
-    def get_profile_pic(self, obj):
-        if not obj.profile_pic:
-            return None
-        
-        profile_pic = obj.profile_pic.url
-        
-        # Cloudinary-specific handling
-        if 'res.cloudinary.com' in profile_pic:
-            # Ensure HTTPS for Cloudinary
-            return profile_pic.replace('http://', 'https://')
-        
-        # Regular handling
-        request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(profile_pic)
-        
-        return profile_pic
-    
-    def to_internal_value(self, data):
-        """Override to handle optional profile_pic"""
-        data = super().to_internal_value(data)
-        if 'profile_pic' in self.context['request'].FILES:
-            data['profile_pic'] = self.context['request'].FILES['profile_pic']
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        profile_pic = instance.profile_pic
+        if not profile_pic:
+            representation['profile_pic'] = None
+        else:
+            url = profile_pic.url
+            if 'res.cloudinary.com' in url:
+                # Ensure HTTPS for Cloudinary
+                url = url.replace('http://', 'https://')
+            request = self.context.get('request')
+            if request:
+                url = request.build_absolute_uri(url)
+            representation['profile_pic'] = url
 
-        return data
+        return representation
+        

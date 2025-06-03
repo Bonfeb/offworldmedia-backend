@@ -341,27 +341,6 @@ class ServiceView(APIView):
         except Exception as e:
             return Response({"error": "Error deleting service", "details": str(e)}, status=500)
 
-# Booking API
-class BookingListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = BookingSerializer
-
-    def get_queryset(self):
-        booking = Booking.objects.filter(user=self.request.user)
-        return booking
-
-    def perform_create(self, serializer):
-        service_id = self.request.data.get("service")
-        event_date = parse_date(self.request.data.get("event_date"))
-
-        if not service_id or not event_date:
-            raise ValidationError({"error": "Service and date are required."})
-
-        if Booking.objects.filter(service_id=service_id, event_date=event_date).exists():
-            raise ValidationError({"error": "Service already booked on this date."})
-
-        serializer.save(user=self.request.user)
-
 class BookingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -382,45 +361,51 @@ class BookingView(APIView):
 
         return Response({"user_bookings": serializer.data}, status=status.HTTP_200_OK)
         
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs): 
         """Handles booking creation."""
         user = request.user
+        if not user.is_authenticated:
+            return Response({"error": "You must be logged in to book a service."}, status=status.HTTP_401_UNAUTHORIZED)
+        
         service_id = kwargs.get("pk")  # pk is provided in the URL, meaning we're booking this service
         print(f"Service ID from URL: {service_id}")
         print(f"User: {user}")
         if not service_id:
             return Response({"error": "Service ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        cart_item = Cart.objects.filter(user=user, service_id=service_id).first()
+        cart_item = Cart.objects.select_related('service').filter(
+            user=user, 
+            service_id=service_id
+        ).first()
+
         if not cart_item:
             return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Extract event details from the cart item
-        event_date = cart_item.event_date
-        event_time = cart_item.event_time
-        event_location = cart_item.event_location
+        booking_data = {
+            "user": user.id,
+            "service": cart_item.service.id,
+            "event_date": cart_item.event_date,
+            "event_time": cart_item.event_time,
+            "event_location": cart_item.event_location,
+            "status": "Pending"  # Default status for new bookings
+        }
+        serializer = BookingSerializer(data=booking_data, context={"request": request})
 
-        if not event_date or not event_time or not event_location:
-            return Response({"error": "Missing event details"}, status=status.HTTP_400_BAD_REQUEST)
-
-        existing_booking = Booking.objects.filter(
-        service_id=service_id, event_date=event_date, event_time=event_time
-    ).exclude(pk=pk).exists()
-
-        if existing_booking:
+        if not serializer.is_valid():
+            print("Serializer errors:", serializer.errors)
+            return Response({"error": "Validation Failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Booking.objects.filter(
+            service_id=service_id,
+            event_date=booking_data['event_date'],
+            event_time=booking_data['event_time']
+        ).exists():
             return Response(
-            {"error": "Service already booked on this date."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-        # Create a booking
-        booking = Booking.objects.create(
-            user=user,
-            service=cart_item.service,
-            event_date=event_date,
-            event_time=event_time,
-            event_location=event_location
-        )
+                {"error": "Service already booked on this date and time."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        booking = serializer.save()
 
         cart_item.delete()
 
@@ -743,7 +728,7 @@ class TeamView(APIView):
         if not request.user.is_staff:
             return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = TeamMemberSerializer(data=request.data, files=request.FILES, context={'request': request})
+        serializer = TeamMemberSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -796,15 +781,17 @@ class AdminDashboardView(APIView):
 
     def post(self, request):
         """Handle POST requests - create booking"""
-        if not request.user.is_staff:
-            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
-
         serializer = BookingSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
+        if not serializer.is_valid():
+            print("Serializer errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Serializer errors:", serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"Error saving booking: {str(e)}")
+            return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def put(self, request, pk):
         """Handle PUT requests - update booking"""
