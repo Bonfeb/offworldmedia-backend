@@ -266,9 +266,16 @@ class TeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamMember
         fields = ['id', 'name', 'role', 'profile_pic', 'bio']
-        extra_kwargs = {
-            'profile_pic': {'required': False, 'allow_null': True}
-            }
+
+    def validate_profile_pic(self, value):
+        valid_extensions = ['jpg', 'jpeg', 'png', '.gif', '.webp']
+        if not value.name.lower().endswith(tuple(valid_extensions)):
+            raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
+        
+        valid_mime_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if hasattr(value, 'content_type') and value.content_type not in valid_mime_types:
+            raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
+       
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
