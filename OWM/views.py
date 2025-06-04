@@ -733,11 +733,12 @@ class TeamView(APIView):
     
     def post(self, request):
         try:
-            serializer = TeamMemberSerializer(data=request.data, context={'request': request})
+            serializer = TeamMemberSerializer(data=request.data, files=request.FILES, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print(f"Error saving team member: {str(e)}")
             return Response({"error": "Failed to create team member"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
