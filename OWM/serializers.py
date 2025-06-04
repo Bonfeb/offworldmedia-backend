@@ -268,7 +268,7 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'role', 'profile_pic', 'bio']
 
     def validate_profile_pic(self, value):
-        valid_extensions = ['jpg', 'jpeg', 'png', '.gif', '.webp']
+        valid_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
         if not value.name.lower().endswith(tuple(valid_extensions)):
             raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
         
