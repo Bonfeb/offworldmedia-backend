@@ -273,8 +273,10 @@ class TeamMemberSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
         
         valid_mime_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-        if hasattr(value, 'content_type') and value.content_type not in valid_mime_types:
-            raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
+        if hasattr(value, 'content_type'):
+            content_type = value.content_type
+            if content_type not in valid_mime_types:
+                raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
         
         return value
        
