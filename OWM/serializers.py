@@ -269,7 +269,8 @@ class TeamMemberSerializer(serializers.ModelSerializer):
 
     def validate_profile_pic(self, value):
         valid_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-        if not value.name.lower().endswith(tuple(valid_extensions)):
+        file_extension = value.name.lower().split('.')[-1]
+        if file_extension not in valid_extensions:
             raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
         
         valid_mime_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
@@ -291,7 +292,7 @@ class TeamMemberSerializer(serializers.ModelSerializer):
                 # Ensure HTTPS for Cloudinary
                 url = url.replace('http://', 'https://')
             request = self.context.get('request')
-            if request:
+            if request and not url.startswith('http://', 'https://'):
                 url = request.build_absolute_uri(url)
             representation['profile_pic'] = url
 
