@@ -275,8 +275,9 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         valid_mime_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
         if hasattr(value, 'content_type') and value.content_type not in valid_mime_types:
             raise serializers.ValidationError("Profile picture must be a valid image file (jpg, jpeg, png, gif, webp).")
+        
+        return value
        
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         profile_pic = instance.profile_pic
