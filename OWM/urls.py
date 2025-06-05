@@ -30,7 +30,7 @@ urlpatterns = [
     path('booking/<int:pk>/', BookingView.as_view(), name='booking'),
     
     # TeamMembers Endpoints
-    path('team/', TeamListView.as_view(), name='team'),
+    path('team/', TeamView.as_view(), name='team'),
     path('team/<int:pk>/', TeamView.as_view(), name='team-member'),
 
     # Review Endpoints
