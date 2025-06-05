@@ -717,19 +717,13 @@ class ReviewView(APIView):
             return Response({"message": "Review deleted Successfully!"}, status=204)
         except:
             return Response({"message": "Error deleting Review!"})
-    
-class TeamView(APIView):
-    parser_classes = [MultiPartParser, FormParser]
 
+class TeamListView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
         return [IsAdminUser(), IsAuthenticated()]
-    
-    def get(self, request):
-        member = TeamMember.objects.all()
-        serializer = TeamMemberSerializer(member, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
         try:
@@ -742,6 +736,19 @@ class TeamView(APIView):
         except Exception as e:
             print(f"Error saving team member: {str(e)}")
             return Response({"error": "Failed to create team member"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TeamView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAdminUser(), IsAuthenticated()]
+    
+    def get(self, request):
+        member = TeamMember.objects.all()
+        serializer = TeamMemberSerializer(member, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, pk):
         if not request.user.is_staff:
