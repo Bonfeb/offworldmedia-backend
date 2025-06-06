@@ -745,24 +745,47 @@ class TeamView(APIView):
             return Response({"error": "Failed to create team member"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def put(self, request, pk):
-        if not request.user.is_staff:
-            return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
-        
-        member = get_object_or_404(TeamMember, pk=pk)
-        serializer = TeamMemberSerializer(member, data=request.data, partial=True, context={'request': request})
+        try:
+            logger = logging.getLogger(__name__)
+            if not request.user.is_staff:
+                logger.warning(f"Unauthorized access attempt by user {request.user.username} to update team member {pk}")
+                return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+            
+            member = get_object_or_404(TeamMember, pk=pk)
+            serializer = TeamMemberSerializer(member, data=request.data, partial=True, context={'request': request})
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if serializer.is_valid():
+                serializer.save()
+                logger.info(f"Team Member {member.name} updated successfully")
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            logger.error(f"Failed to update team member {pk}: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception(f"Error updating team member {pk}: {str(e)}")
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def delete(self, request, pk):
-        member = get_object_or_404(TeamMember, pk=pk)
+        logger = logging.getLogger(__name__)
         try:
+            if not request.user.is_staff:
+                logger.warning(f"Unauthorized access attempt by user {request.user.username} to delete team member {pk}")
+                return Response({"error": "Forbidden: Authenticated Admins only"}, status=status.HTTP_403_FORBIDDEN)
+            
+            member = get_object_or_404(TeamMember, pk=pk)
+
+            logger.warning(f"Deleting team member {member.name} by user {request.user.username}")
+
             member.delete()
-            return Response({"message": "Team Member deleted Successfully!"}, status=status.HTTP_200_OK)
+            return Response({"message": "Team member deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        
         except Exception as e:
-            return Response({"message": f"Error deleting Team Member:  {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.exception(f"Error deleting team member {pk}: {str(e)}")
+            return Response({
+                "error": "Failed to delete team member",
+                "details": str(e)
+                }, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 #Admin Views
 class AdminDashboardView(APIView):
     permission_classes = [IsAdminUser]  # Custom permission class to restrict access to admins
