@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.fields import ImageField
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import *
+import logging
 
 class CustomUserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField(required=False)  # Make profile_pic optional
@@ -282,19 +283,23 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         return value
        
     def to_representation(self, instance):
+        logger = logging.getLogger(__name__)
         representation = super().to_representation(instance)
         profile_pic = instance.profile_pic
         if not profile_pic:
             representation['profile_pic'] = None
         else:
-            url = profile_pic.url
-            if 'res.cloudinary.com' in url:
-                # Ensure HTTPS for Cloudinary
+            try:
+               url = profile_pic.url
+               if 'res.cloudinary.com' in url:
                 url = url.replace('http://', 'https://')
-            request = self.context.get('request')
-            if request and not url.startswith('http://', 'https://'):
-                url = request.build_absolute_uri(url)
-            representation['profile_pic'] = url
-
+                request = self.context.get('request')
+                if request and not url.startswith(('http://', 'https://')):
+                    url = request.build_absolute_uri(url)
+                representation['profile_pic'] = url
+            except Exception as e:
+                logger.warning(f"Error getting profile picture URL: {e}")
+                logger.exception("Failed to get profile picture URL for {instance.name}")
+                representation['profile_pic'] = None
         return representation
         
