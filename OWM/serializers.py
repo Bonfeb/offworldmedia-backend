@@ -213,6 +213,7 @@ class BookingSerializer(serializers.ModelSerializer):
         return None
 
 class CartSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     service_name = serializers.CharField(source="service.name", read_only=True)
     service_id = serializers.IntegerField(source="service.id", read_only=True)
     service_price = serializers.DecimalField(source="service.price", max_digits=10, decimal_places=2, read_only=True)
