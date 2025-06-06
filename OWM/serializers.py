@@ -224,7 +224,7 @@ class CartSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Cart
-        fields = ["id", "service", "service_name", "service_price", "service_image", "added_at", "event_date", "event_location", "event_time"]
+        fields = ["id", "service", "service_id", "service_name", "service_price", "service_image", "added_at", "event_date", "event_location", "event_time"]
 
 class ContactUsSerializer(serializers.ModelSerializer):
     class Meta:
