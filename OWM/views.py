@@ -383,7 +383,7 @@ class BookingView(APIView):
             return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
 
         booking_data = {
-            "user_id": user.id,
+            "user": user.id,
             "service_id": service_id,
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
