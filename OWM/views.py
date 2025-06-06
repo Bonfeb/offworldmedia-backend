@@ -734,7 +734,7 @@ class TeamView(APIView):
     def post(self, request):
         logger = logging.getLogger(__name__)
         try:
-            serializer = TeamMemberSerializer(data=request.data, files=request.FILES, context={'request': request})
+            serializer = TeamMemberSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
