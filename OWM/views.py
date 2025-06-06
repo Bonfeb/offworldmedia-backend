@@ -363,6 +363,7 @@ class BookingView(APIView):
         
     def post(self, request, *args, **kwargs): 
         """Handles booking creation."""
+        logger = logging.getLogger(__name__)
         user = request.user
         if not user.is_authenticated:
             return Response({"error": "You must be logged in to book a service."}, status=status.HTTP_401_UNAUTHORIZED)
@@ -382,12 +383,14 @@ class BookingView(APIView):
             return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
 
         booking_data = {
-            "user": user.id,
+            "user_id": user.id,
             "service_id": service_id,
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
             "event_location": cart_item.event_location,
+            "status": "pending"  # Default status for new bookings
         }
+        logger.info(f"Booking data: {booking_data}")
         serializer = BookingSerializer(data=booking_data, context={"request": request})
 
         if not serializer.is_valid():
