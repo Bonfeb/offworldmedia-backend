@@ -775,6 +775,15 @@ class TeamView(APIView):
 
             logger.warning(f"Deleting team member {member.name} by user {request.user.username}")
 
+            if member.profile_pic:
+                try:
+                    storage = member.profile_pic.storage
+                    if storage.exists(member.profile_pic.name):
+                        storage.delete(member.profile_pic.name)
+                        logger.info(f"Deleted profile picture for team member {member.id}")
+                except Exception as file_error:
+                    logger.error(f"Error deleting profile picture for team member {member.id}: {str(file_error)}")
+
             member.delete()
             return Response({"message": "Team member deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         
