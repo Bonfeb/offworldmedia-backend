@@ -213,7 +213,8 @@ class BookingSerializer(serializers.ModelSerializer):
         return None
 
 class CartSerializer(serializers.ModelSerializer):
-    service_name = serializers.CharField(source="service.name", read_only=True)
+    service_name = serializers.CharField(source="service.name", read_only=True),
+    service_id = serializers.IntegerField(source="service.id", read_only=True)
     service_price = serializers.DecimalField(source="service.price", max_digits=10, decimal_places=2, read_only=True)
     service_image = serializers.ImageField(source="service.image", read_only=True)
     added_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
@@ -223,7 +224,7 @@ class CartSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Cart
-        fields = ["id", "service", "service_name", "service_price", "service_image", "added_at", "event_date", "event_location", "event_time"]
+        fields = ["id", "service", "service_id", "service_name", "service_price", "service_image", "added_at", "event_date", "event_location", "event_time"]
 
 class ContactUsSerializer(serializers.ModelSerializer):
     class Meta:
