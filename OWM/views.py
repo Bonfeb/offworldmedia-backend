@@ -383,7 +383,7 @@ class BookingView(APIView):
 
         booking_data = {
             "user": user.id,
-            "service": cart_item.service.id,
+            "service": service_id,
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
             "event_location": cart_item.event_location,
