@@ -361,16 +361,16 @@ class BookingView(APIView):
 
         return Response({"user_bookings": serializer.data}, status=status.HTTP_200_OK)
         
-    def post(self, request, *args, **kwargs): 
+    def post(self, request, pk, *args, **kwargs): 
         """Handles booking creation."""
         logger = logging.getLogger(__name__)
         user = request.user
         if not user.is_authenticated:
             return Response({"error": "You must be logged in to book a service."}, status=status.HTTP_401_UNAUTHORIZED)
         
-        service_id = kwargs.get("pk")  # pk is provided in the URL, meaning we're booking this service
-        print(f"Service ID from URL: {service_id}")
-        print(f"User: {user}")
+        service_id = pk  # pk is provided in the URL, meaning we're booking this service
+        logger.info(f"Service ID from URL: {service_id}")
+        logger.info(f"User: {user}")
         if not service_id:
             return Response({"error": "Service ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -409,8 +409,9 @@ class BookingView(APIView):
         
         try:
             booking = serializer.save()
+            logger.info(f"Booking created successfully: {booking.id}")
         except Exception as e:
-            print(f"Error saving booking: {str(e)}")
+            logger.error(f"Error creating booking: {str(e)}")
             return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         cart_item.delete()
