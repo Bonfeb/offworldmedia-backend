@@ -429,7 +429,7 @@ class BookingView(APIView):
             'event_date': booking.event_date,
             'event_time': booking.event_time,
             'event_location': booking.event_location,
-            'created_at': booking.created_at,
+            'booked_at': booking.booked_at,
             'admin_emails': admin_emails
         }
 
@@ -963,7 +963,7 @@ class AdminDashboardView(APIView):
             booking_data = []
             try:
                 logger.debug("Querying recent bookings")
-                recent_bookings = Booking.objects.select_related('user', 'service').order_by('-created_at')[:3]
+                recent_bookings = Booking.objects.select_related('user', 'service').order_by('-booked_at')[:3]
                 booking_data = BookingSerializer(recent_bookings, many=True).data
                 logger.debug(f"Retrieved {len(booking_data)} recent bookings")
             except Exception as e:
@@ -973,7 +973,7 @@ class AdminDashboardView(APIView):
             review_data = []
             try:
                 logger.debug("Querying recent reviews")
-                recent_reviews = Review.objects.select_related('user', 'service').order_by('-created_at')[:3]
+                recent_reviews = Review.objects.select_related('user', 'service').order_by('-booked_at')[:3]
                 review_data = ReviewSerializer(recent_reviews, many=True).data
             except Exception as e:
                 logger.error(f"Error retrieving recent reviews: {str(e)}", exc_info=True)
@@ -1105,7 +1105,7 @@ class AdminDashboardView(APIView):
         review_id = self.request.query_params.get('id')
 
         if not review_id:
-            reviews = Review.objects.all().order_by('created_at')
+            reviews = Review.objects.all().order_by('booked_at')
             serializer = ReviewSerializer(reviews, many=True)
             return Response(serializer.data)
         try:
