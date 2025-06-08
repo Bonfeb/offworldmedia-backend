@@ -447,7 +447,7 @@ class BookingView(APIView):
         print("Received Data:", request.data)
         booking = get_object_or_404(Booking, pk=pk, user=request.user)
 
-        if booking.status not in ["Pending", "Cancelled"]:
+        if booking.status not in ["pending", "canceled"]:
             return Response(
                 {"error": "Only Pending or Cancelled bookings can be edited."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -473,7 +473,7 @@ class BookingView(APIView):
 
         if existing_booking:
             return Response(
-                {"error": "Service already booked on this date."},
+                {"error": "Service already booked on this date and Time."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -500,7 +500,7 @@ class BookingView(APIView):
                 {"error": "You do not have permission to delete this booking."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        if booking.status not in ["Pending"] and not user.is_staff:
+        if booking.status not in ["pending"] and not user.is_staff:
             return Response(
                 {"error": "You do not have permission to delete a booking whose statsus is not Pending"}, status=status.HTTP_403_FORBIDDEN
                 )
@@ -789,10 +789,10 @@ class TeamView(APIView):
                 }, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 #Admin Views
 class AdminDashboardView(APIView):
     permission_classes = [IsAdminUser]  # Custom permission class to restrict access to admins
-
     def get(self, request):
         """Handle all GET requests - dashboard stats, bookings, users, messages or reviews"""
         if not request.user.is_staff:
@@ -1031,7 +1031,12 @@ class AdminDashboardView(APIView):
     def _get_users_list(self):
         """Return list of users or detailed info for a specific user"""
         print("Received request with params:", self.request.GET)
-        user_id = self.request.query_params.get('id')
+        user_id = self.request.query_params.get('id') or self.request.query_params.get('user_id')
+        if user_id:
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                return Response({"error": "Invalid user ID"}, status=status.HTTP_400_BAD_REQUEST)
 
         page = int(self.request.query_params.get('page', 1))
         page_size = int(self.request.query_params.get('page_size', 10))
@@ -1059,9 +1064,12 @@ class AdminDashboardView(APIView):
         # If a specific user ID is provided, return detailed info for that user
         try:
             user = CustomUser.objects.get(id=user_id)
-            bookings = Booking.objects.filter(user=user)  # Changed from get() to filter()
+            bookings = Booking.objects.filter(user=user)
+            total_bookings = bookings.count()
             reviews = Review.objects.filter(user=user)
+            total_reviews = reviews.count()
             messages = ContactUs.objects.filter(user=user)
+            total_messages = messages.count()
             
             # Serialize all data
             user_data = CustomUserSerializer(user, context={'request': self.request}).data
@@ -1072,8 +1080,11 @@ class AdminDashboardView(APIView):
             return Response({
                 "user": user_data,
                 "bookings": bookings_data,
+                "total_bookings": total_bookings,
                 "reviews": reviews_data,
-                "messages": messages_data
+                "total_reviews": total_reviews,
+                "messages": messages_data,
+                "total_messages": total_messages
             })
         except CustomUser.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -1105,7 +1116,7 @@ class AdminDashboardView(APIView):
         review_id = self.request.query_params.get('id')
 
         if not review_id:
-            reviews = Review.objects.all().order_by('booked_at')
+            reviews = Review.objects.all().order_by('created_at')
             serializer = ReviewSerializer(reviews, many=True)
             return Response(serializer.data)
         try:
