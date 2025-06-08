@@ -198,10 +198,15 @@ class BookingSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
+        request = self.context.get('request')
+        if 'user_id' in validated_data and request.user.is_staff:
+            user_id = validated_data.pop('user_id')
+            validated_data['user'] = CustomUser.objects.get(id=user_id)
+        elif request.user.is_authenticated:
+            validated_data['user'] = request.user
+        else:
+            raise serializers.ValidationError("Authentication required to create a booking")
         validated_data['status'] = 'pending'
-
-        if 'user_id' in validated_data:
-            validated_data['user_id'] = self.context['request'].user.id
         return super().create(validated_data)
 
     def get_service_image_url(self, obj):
