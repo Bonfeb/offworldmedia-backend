@@ -345,7 +345,6 @@ class BookingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk=None):
-    
         """Fetches either a specific booking (if `pk` is provided) or all user bookings."""
         if pk:
             try:
@@ -368,7 +367,7 @@ class BookingView(APIView):
         if not user.is_authenticated:
             return Response({"error": "You must be logged in to book a service."}, status=status.HTTP_401_UNAUTHORIZED)
         
-        service_id = pk  # pk is provided in the URL, meaning we're booking this service
+        service_id = pk # pk is provided in the URL, meaning we're booking this service
         logger.info(f"Service ID from URL: {service_id}")
         logger.info(f"User: {user}")
         if not service_id:
@@ -530,9 +529,9 @@ class UserDashboardView(APIView):
 
         # Categorize bookings *user
         bookings = Booking.objects.filter(user=user)
-        pending = bookings.filter(status="Pending")
-        completed = bookings.filter(status="Completed")
-        cancelled = bookings.filter(status="Cancelled")
+        pending = bookings.filter(status="pending")
+        completed = bookings.filter(status="completed")
+        cancelled = bookings.filter(status="cancelled")
 
 
         return Response({
