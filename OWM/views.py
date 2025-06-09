@@ -973,7 +973,7 @@ class AdminDashboardView(APIView):
             review_data = []
             try:
                 logger.debug("Querying recent reviews")
-                recent_reviews = Review.objects.select_related('user', 'service').order_by('-booked_at')[:3]
+                recent_reviews = Review.objects.select_related('user', 'service').order_by('-created_at')[:3]
                 review_data = ReviewSerializer(recent_reviews, many=True).data
             except Exception as e:
                 logger.error(f"Error retrieving recent reviews: {str(e)}", exc_info=True)
@@ -1032,7 +1032,8 @@ class AdminDashboardView(APIView):
         logger = logging.getLogger(__name__)
         """Return list of users or detailed info for a specific user"""
         print("Received request with params:", self.request.GET)
-        user_id = self.request.query_params.get('id') or self.request.query_params.get('user_id')
+        user_id = self.request.query_params.get('user_id')
+        logger.info(f"User ID from request: {user_id}")
         if user_id:
             try:
                 user_id = int(user_id)
