@@ -1029,6 +1029,7 @@ class AdminDashboardView(APIView):
             }, status=500)
 
     def _get_users_list(self):
+        logger = logging.getLogger(__name__)
         """Return list of users or detailed info for a specific user"""
         print("Received request with params:", self.request.GET)
         user_id = self.request.query_params.get('id') or self.request.query_params.get('user_id')
@@ -1070,6 +1071,8 @@ class AdminDashboardView(APIView):
             total_reviews = reviews.count()
             messages = ContactUs.objects.filter(user=user)
             total_messages = messages.count()
+
+            logger.info(f"User {user.username} found with {total_bookings} bookings, {total_reviews} reviews, and {total_messages} messages.")
             
             # Serialize all data
             user_data = CustomUserSerializer(user, context={'request': self.request}).data
