@@ -792,7 +792,9 @@ class TeamView(APIView):
 
 #Admin Views
 class AdminDashboardView(APIView):
-    permission_classes = [IsAdminUser]  # Custom permission class to restrict access to admins
+    permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser]
+
     def get(self, request):
         """Handle all GET requests - dashboard stats, bookings, users, messages or reviews"""
         if not request.user.is_staff:
@@ -1153,3 +1155,111 @@ class AdminDashboardView(APIView):
         booking = get_object_or_404(Booking, pk=booking_id)
         serializer = BookingSerializer(booking)
         return Response(serializer.data)
+    
+
+class AdminUserView(APIView):
+    permission_classes = [IsAdminUser]
+    parsser_classes = [MultiPartParser, FormParser]
+
+    def put(self, request, pk):
+        """Update user details by admin"""
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            user = get_object_or_404(CustomUser, pk=pk)
+            serializer = CustomUserSerializer(user, data=request.data, partial=True, context={'request': request})
+
+            if serializer.is_valid():
+                serializer.save()
+                print(f"✅ User {user.username} updated successfully")
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            return Response({"error": "User Update Failed.", "details": serializer.erros}, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            print(f"🔥 Error updating user {pk}: {str(e)}")
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    def delete(self, request, pk):
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            user = get_object_or_404(CustomUser, pk=pk)
+
+            if user == request.user:
+                return Response({"error": "You cannot delete your own account here."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if user.is_superuser and not request.user.is_superuser:
+                return Response({"error": "Only superusers can delete other superusers"}, status=status.HTTP_403_FORBIDDEN)
+            
+            user.delete()
+            return Response({
+                "success": True,
+                "message": f"User {user.username} deleted successfully!",
+                "deleted_at": timezone.now().isoformat()
+            }, status=status.HTTP_204_NO_CONTENT)
+        
+        except Exception as e:
+            print(f"🔥 Error deleting user {pk}: {str(e)}")
+            return Response({"error": "Failed to delete user", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class AdminBookingView(APIView):
+    permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def put(self, request, pk):
+        """Update booking details by admin"""
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            booking = get_object_or_404(Booking, pk=pk)
+            data = request.data.copy()
+            data["user"] = request.user.id
+
+            service_id = data.get("service_id")
+            event_date = parse_date(data.get("event_date"))
+            event_time = parse_time(data.get("event_time"))
+
+            if service_id and event_date and event_time:
+                existing_booking = Booking.objects.filter(
+                    service_id=service_id,
+                    event_date=event_date,
+                    event_time=event_time
+                ).exclude(pk=pk).exists()
+
+                if existing_booking:
+                    print("Service Already Booked on this date and Time!")
+                    return Response({"error": "Servie Already Booked on this Date and Time"}, status=status.HTTP_400_BAD_REQUEST)
+                
+            serializer = BookingSerializer(booking,data=request.data, partial=True, context={"request": request})
+
+            if serializer.is_valid():
+                serializer.save()
+                print(f"Booking {pk} updated Successful")
+                return Response({"message": "Booking Updated Successful", "details": serializer.data}, status=status.HTTP_200_OK)
+            
+            return Response({"error": "Booking Update Failed", "details": serializer.error})
+        
+        except Exception as e:
+            print(f"🔥 Error updating booking {pk}: {str(e)}")
+            return Response({"error": "Booking not found. Internal server error"}, status=status.HTTP_404_NOT_FOUND)
+        
+    def delete(self, request, pk):
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            booking = get_object_or_404(Booking, pk=pk)
+            booking.delete()
+            return Response({
+                "success": True,
+                "message": f"Booking {booking.id} deleted successfully!",
+                "deleted_at": timezone.now().isoformat()
+            }, status=status.HTTP_204_NO_CONTENT)
+        
+        except Exception as e:
+            print(f"🔥 Error deleting booking {pk}: {str(e)}")
+            return Response({"error": "Failed to delete booking", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            

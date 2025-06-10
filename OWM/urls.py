@@ -44,4 +44,8 @@ urlpatterns = [
     #Admin Dashboard paths
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
     path('admin-dashboard/<int:pk>/', AdminDashboardView.as_view(), name='admin-dashboard'),
+
+    #Admin Booking/User Endpoints
+    path('admin-booking/<int:pk>/', AdminBookingView.as_view(), name='admin-booking'),
+    path('admin-user/<int:pk>/', AdminUserView.as_view(), name='admin-user'),
 ]
