@@ -456,7 +456,7 @@ class BookingView(APIView):
         data = request.data.copy()
         data["user"] = request.user.id  # Ensure the correct user is set
 
-        service_id = data.get("service")
+        service_id = data.get("service_id")
         event_date = parse_date(data.get("event_date"))
         event_time = parse_time(data.get("event_time"))
 
@@ -502,7 +502,7 @@ class BookingView(APIView):
             )
         if booking.status not in ["pending"] and not user.is_staff:
             return Response(
-                {"error": "You do not have permission to delete a booking whose statsus is not Pending"}, status=status.HTTP_403_FORBIDDEN
+                {"error": "You do not have permission to delete a booking whose status is not Pending"}, status=status.HTTP_403_FORBIDDEN
                 )
         try:
             booking.delete()
