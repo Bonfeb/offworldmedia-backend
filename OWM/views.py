@@ -1156,10 +1156,15 @@ class AdminDashboardView(APIView):
         serializer = BookingSerializer(booking)
         return Response(serializer.data)
     
-
 class AdminUserView(APIView):
     permission_classes = [IsAdminUser]
     parsser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        users = CustomUser.objects.all()
+        serializer = CustomUserSerializer(users, many=True, context={'request': request}).data
+
+        return Response(serializer, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         """Update user details by admin"""

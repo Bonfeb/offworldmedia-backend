@@ -47,5 +47,6 @@ urlpatterns = [
 
     #Admin Booking/User Endpoints
     path('admin-booking/<int:pk>/', AdminBookingView.as_view(), name='admin-booking'),
+    path('admin-users/', AdminUserView.as_view),
     path('admin-user/<int:pk>/', AdminUserView.as_view(), name='admin-user'),
 ]
