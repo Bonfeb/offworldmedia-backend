@@ -1158,11 +1158,13 @@ class AdminDashboardView(APIView):
     
 class AdminUserView(APIView):
     permission_classes = [IsAdminUser]
-    parsser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
         users = CustomUser.objects.all()
         serializer = CustomUserSerializer(users, many=True, context={'request': request}).data
+
+        print("Users List:", users)
 
         return Response(serializer, status=status.HTTP_200_OK)
 
