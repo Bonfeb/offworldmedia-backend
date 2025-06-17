@@ -466,7 +466,7 @@ class BookingView(APIView):
         if not event_date:
             return Response({"error": "Valid event date is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ensure the same service is not double booked on the same date
+        # Ensure the same service is not double booked on the same date and time
         existing_booking = Booking.objects.filter(
             service_id=service_id, event_date=event_date, event_time=event_time
         ).exclude(pk=pk).exists()
@@ -1223,7 +1223,6 @@ class AdminBookingView(APIView):
         try:
             booking = get_object_or_404(Booking, pk=pk)
             data = request.data.copy()
-            data["user"] = request.user.id
 
             service_id = data.get("service_id")
             event_date = parse_date(data.get("event_date"))
@@ -1247,7 +1246,7 @@ class AdminBookingView(APIView):
                 print(f"Booking {pk} updated Successful")
                 return Response({"message": "Booking Updated Successful", "details": serializer.data}, status=status.HTTP_200_OK)
             
-            return Response({"error": "Booking Update Failed", "details": serializer.error})
+            return Response({"error": "Booking Update Failed", "details": serializer.errors})
         
         except Exception as e:
             print(f"🔥 Error updating booking {pk}: {str(e)}")
