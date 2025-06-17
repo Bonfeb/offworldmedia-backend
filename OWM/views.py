@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework import generics
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.http import JsonResponse
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
@@ -1213,7 +1213,7 @@ class AdminUserView(APIView):
         
 class AdminBookingView(APIView):
     permission_classes = [IsAdminUser]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def put(self, request, pk):
         """Update booking details by admin"""
