@@ -1012,15 +1012,25 @@ class AdminDashboardView(APIView):
             return Response(serializer.data)
 
         try:
-            queryset = Booking.objects.select_related('user', 'service')
+            base_queryset = Booking.objects.select_related('user', 'service')
+            #Manual filtering
+            filtered_bookings = BookingFilter(request.query_params, queryset=base_queryset).qs
 
             # Filter by status if provided
             if status_filter and status_filter.lower() != 'all':
-                queryset = queryset.filter(status=status_filter.lower())
+                filtered_bookings = filtered_bookings.filter(status=status_filter.lower())
 
-            # Always return ordered list
-            bookings = queryset.order_by('-event_date', '-event_time')
-            serializer = BookingSerializer(bookings, many=True)
+            applied_filters = any(
+                param in request.query_params
+                for param in ['user', 'service', 'event_location']
+            )
+
+            if applied_filters:
+                queryset = filtered_bookings.order_by('user__username')
+            else:
+                queryset = base_queryset.order_by('-event_date', '-event_time')
+
+            serializer = BookingSerializer(queryset, many=True)
             return Response(serializer.data)
 
         except Exception as e:
