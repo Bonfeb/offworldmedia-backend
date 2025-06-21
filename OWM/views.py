@@ -638,7 +638,6 @@ class ContactUsView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     def put(self, request, pk):
         contact_us = get_object_or_404(ContactUs, pk=pk)
         serializer = ContactUsSerializer(contact_us, data=request.data, partial=True)

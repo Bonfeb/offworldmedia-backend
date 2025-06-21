@@ -3,7 +3,7 @@ from .models import *
 
 class CustomUserFilter(django_filters.FilterSet):
     username = django_filters.CharFilter(lookup_expr='icontains')
-    email = django_filters.CharFilter(lookup_expr='iexact')
+    email = django_filters.CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = CustomUser
