@@ -57,6 +57,7 @@ class Service(models.Model):
 class Booking(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
         ('completed', 'Completed'),
         ('canceled', 'Canceled'),
     ]
