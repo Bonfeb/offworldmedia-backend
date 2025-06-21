@@ -309,4 +309,31 @@ class TeamMemberSerializer(serializers.ModelSerializer):
                 logger.exception("Failed to get profile picture URL for {instance.name}")
                 representation['profile_pic'] = None
         return representation
-        
+
+class ImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+
+    class Meta:
+        model = Image
+        fields = ['id', 'image', 'uploaded_at']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and representation.get('image'):
+            representation['image'] = request.build_absolute_uri(representation['image'])
+        return representation
+
+class VideoSerializer(serializers.ModelSerializer):
+    video = serializers.FileField()
+
+    class Meta:
+        model = Video
+        fields = ['id', 'video', 'uploaded_at']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and representation.get('video'):
+            representation['video'] = request.build_absolute_uri(representation['video'])
+        return representation

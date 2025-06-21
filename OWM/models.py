@@ -147,3 +147,25 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.service.name} ({self.rating}★)"
+
+class Image(models.Model):
+    image = CloudinaryField('gallery_images', blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Image"
+        verbose_name_plural = "Images"
+
+    def __str__(self):
+        return f"Image {self.id} - Uploaded at {self.uploaded_at}"
+    
+class Video(models.Model):
+    video = CloudinaryField('gallery_videos', blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Video"
+        verbose_name_plural = "Videos"
+
+    def __str__(self):
+        return f"Video {self.id} - Uploaded at {self.uploaded_at}"

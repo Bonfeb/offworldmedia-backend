@@ -41,6 +41,11 @@ urlpatterns = [
     path('contactus/', ContactUsView.as_view(), name='contactus'),
     path('contactus/<int:pk>/', ContactUsView.as_view()),
 
+    path('images/', ImageView.as_view(), name='image'),
+    path('image/<int:pk>/', ImageView.as_view(), name='image'),
+    path('videos/', VideoView.as_view(), name='video'),
+    path('video/<int:pk>/', VideoView.as_view(), name='video'),
+
     #Admin Dashboard paths
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
     path('admin-dashboard/<int:pk>/', AdminDashboardView.as_view(), name='admin-dashboard'),
