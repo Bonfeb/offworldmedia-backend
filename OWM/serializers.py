@@ -325,7 +325,7 @@ class ImageSerializer(serializers.ModelSerializer):
         return representation
 
 class VideoSerializer(serializers.ModelSerializer):
-    video = serializers.FileField()
+    video = serializers.URLField()
 
     class Meta:
         model = Video
