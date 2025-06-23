@@ -160,7 +160,7 @@ class Image(models.Model):
         return f"Image {self.id} - Uploaded at {self.uploaded_at}"
     
 class Video(models.Model):
-    video = models.URLField(upload_to='gallery_videos', blank=True, null=True)
+    video = models.URLField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
