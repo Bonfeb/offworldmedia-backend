@@ -710,7 +710,6 @@ class VideoView(APIView):
 
             video = Video.objects.create(
                 video=upload_result.get("secure_url"),
-                public_id=upload_result.get("public_id"),
                 uploaded_at=timezone.now()
             )
 
