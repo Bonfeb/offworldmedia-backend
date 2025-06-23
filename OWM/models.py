@@ -161,7 +161,7 @@ class Image(models.Model):
         return f"Image {self.id} - Uploaded at {self.uploaded_at}"
     
 class Video(models.Model):
-    video = CloudinaryField('gallery_videos', blank=True, null=True, storage=VideoMediaCloudinaryStorage())
+    video = models.FileField('gallery_videos', blank=True, null=True, storage=VideoMediaCloudinaryStorage())
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
