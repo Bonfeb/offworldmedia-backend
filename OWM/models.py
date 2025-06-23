@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from cloudinary.models import CloudinaryField
 from django.db import models
+from .utils import VideoMediaCloudinaryStorage
 
 # Custom User Model
 class CustomUser(AbstractUser):
@@ -160,7 +161,7 @@ class Image(models.Model):
         return f"Image {self.id} - Uploaded at {self.uploaded_at}"
     
 class Video(models.Model):
-    video = CloudinaryField('gallery_videos', blank=True, null=True)
+    video = CloudinaryField('gallery_videos', blank=True, null=True, storage=VideoMediaCloudinaryStorage())
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
