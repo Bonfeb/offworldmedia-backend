@@ -712,8 +712,10 @@ class VideoView(APIView):
                 video=upload_result.get("secure_url"),
                 uploaded_at=timezone.now()
             )
+            print("Video Uploaded Successfully!", video)
 
             serializer = VideoSerializer(video)
+            print("Uploaded Video Data:", serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except Exception as e:
