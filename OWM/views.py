@@ -724,13 +724,30 @@ class VideoView(APIView):
     
     def put(self, request, pk):
         video = get_object_or_404(Video, pk=pk)
-        serializer = VideoSerializer(video, data=request.data, partial=True)
 
-        if serializer.is_valid():
-            serializer.save()
+        if 'video' not in request.FILES:
+            return Response({"error": "No video file provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        video_file = request.FILES['video']
+
+        try:
+            upload_result = cloudinary.uploader.upload(
+                video_file,
+                resource_type="video",
+                folder="gallery_videos"
+            )
+
+            # Save new video URL
+            video.video = upload_result.get("secure_url")
+            video.uploaded_at = timezone.now()
+            video.save()
+
+            serializer = VideoSerializer(video)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            print(f"Error updating video: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Review API
 class ReviewView(APIView):
