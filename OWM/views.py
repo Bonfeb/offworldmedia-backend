@@ -26,6 +26,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
+import base64, datetime, requests
 from datetime import timedelta
 from collections import defaultdict
 import logging
@@ -511,6 +512,109 @@ class BookingView(APIView):
         except Exception as e:
             return Response({"error": "Error deleting booking", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+def get_access_token():
+    r = requests.get(
+        "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials", auth=(
+            settings.CONSUMER_KEY, settings.CONSUMER_SECRET))
+    return r.json()['access_token']
+
+class STKPushView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        phone_number = request.data.get("phone_number")
+        amount = request.data.get("amount")
+        booking = request.data.get("booking_id")
+
+        if not all([phone_number, amount, booking]):
+            return Response({"error": "Phone number, amount, and booking ID are required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            booking = Booking.objects.get(id=booking, user=user)
+        except Booking.DoesNotExist:
+            return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        service = booking.service.name if hasattr(booking.service, 'name') else str(booking.service)
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        password = base64.base64encode((settings.SHORTCODE + settings.PASSKEY + timestamp).encode()).decode()
+
+        access_token = get_access_token()
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "BusinessShortCode": settings.SHORTCODE,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": amount,
+            "PartyA": phone_number,
+            "PartyB": settings.SHORTCODE,
+            "PhoneNumber": phone_number,
+            "CallBackURL": settings.CALLBACK_URL,
+            "AccountReference": f"Booking-{booking.id}",
+            "TransactionDesc": f"Payment for service {service}"
+        }
+
+        mpesa_response = requests.post(
+            "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+            json=payload, headers=headers
+        )
+
+        if mpesa_response.status_code == 200:
+            MpesaTransaction.objects.create(
+                booking=booking,
+                phone_number=phone_number,
+                amount=amount,
+                service=service,
+                merchant_request_id=mpesa_response.json().get("MerchantRequestID"),
+                checkout_request_id=mpesa_response.json().get("CheckoutRequestID"),
+                status="Pending"
+            )
+            data = mpesa_response.json()
+            return Response(data, status=status.HTTP_200_OK)
+        
+        return Response({"error": mpesa_response.json()}, status=mpesa_response.status_code)
+
+# Mpesa Callback View
+class MpesaCallbackView(APIView):
+    def post(self, request):
+        data = request.data
+        callback = data.get('Body', {}).get('stkCallback', {})
+        checkout_id = callback.get('CheckoutRequestID')
+        result_code = callback.get('ResultCode')
+        result_desc = callback.get('ResultDesc')
+
+        try:
+            transaction = MpesaTransaction.objects.get(checkout_request_id=checkout_id)
+            transaction.result_code = result_code
+            transaction.result_desc = result_desc
+            transaction.status = 'Success' if result_code == 0 else 'Failed'
+
+            if result_code == 0:
+                items = callback.get('CallbackMetadata', {}).get('Item', [])
+                for item in items:
+                    name = item['Name']
+                    if name == 'MpesaReceiptNumber':
+                        transaction.mpesa_receipt_number = item['Value']
+                    elif name == 'TransactionDate':
+                        from datetime import datetime
+                        raw_date = str(item['Value'])
+                        transaction.transaction_date = datetime.strptime(raw_date, "%Y%m%d%H%M%S")
+            
+                transaction.booking.status = 'paid'
+                transaction.booking.save()
+                
+            transaction.save()
+        except MpesaTransaction.DoesNotExist:
+            print(f"Transaction with CheckoutRequestID {checkout_id} not found.")
+            return Response({"error": "Transaction not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"ResultCode": 0, "ResultDesc": "Callback received"})
+
 #User Dashboard View
 class UserDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -595,9 +699,10 @@ class ContactUsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
+        user = request.user
         data = request.data.copy()
 
-        if request.user.is_authenticated:
+        if user.is_authenticated:
             data.update({
                 "first_name": request.user.first_name,
                 "last_name": request.user.last_name,

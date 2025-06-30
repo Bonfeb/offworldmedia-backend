@@ -161,6 +161,12 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
+CONSUMER_KEY = config("CONSUMER_KEY")
+CONSUMER_SECRET = config("CONSUMER_SECRET")
+SHORTCODE = config("SHORTCODE")
+PASSKEY = config("PASSKEY")
+CALLBACK_URL = config("CALLBACK_URL")
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

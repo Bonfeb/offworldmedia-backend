@@ -28,6 +28,10 @@ urlpatterns = [
  
     path('bookings/', BookingView.as_view(), name='booking'),
     path('booking/<int:pk>/', BookingView.as_view(), name='booking'),
+
+    #Mpesa Endpoints
+    path('stkpush/', STKPushView.as_view(), name='mpesa-stk-push'),
+    path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa-callback'),
     
     # TeamMembers Endpoints
     path('team/', TeamView.as_view(), name='team'),

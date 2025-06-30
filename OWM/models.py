@@ -56,8 +56,8 @@ class Service(models.Model):
 # Booking Model
 class Booking(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
+        ('unpaid', 'Unpaid'),
+        ('paid', 'Paid'),
         ('completed', 'Completed'),
         ('canceled', 'Canceled'),
     ]
@@ -77,6 +77,23 @@ class Booking(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.service.name} ({self.event_date} {self.event_time})"
 
+class MpesaTransaction(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='transactions')
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    service = models.CharField(max_length=100, null=True, blank=True)
+    merchant_request_id = models.CharField(max_length=100, null=True, blank=True)
+    checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
+    result_code = models.IntegerField(null=True, blank=True)
+    result_desc = models.TextField(null=True, blank=True)
+    mpesa_receipt_number = models.CharField(max_length=100, null=True, blank=True)
+    transaction_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, default='Pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Booking {self.booking_id} - {self.phone_number} - {self.amount} KES"
+
 #Cart Model
 class Cart(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -88,7 +105,7 @@ class Cart(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.service.name} - {self.event_date}"
-
+    
 # Contact Model
 class ContactUs(models.Model):
     STATUS_CHOICES = [
