@@ -634,7 +634,8 @@ class UserDashboardView(APIView):
 
         # Categorize bookings *user
         bookings = Booking.objects.filter(user=user)
-        pending = bookings.filter(status="pending")
+        unpaid = bookings.filter(status="unpaid")
+        paid = bookings.filter(status="paid")
         completed = bookings.filter(status="completed")
         cancelled = bookings.filter(status="cancelled")
 
@@ -642,7 +643,8 @@ class UserDashboardView(APIView):
         return Response({
             "user": user_data,
             "bookings": {
-                "pending": BookingSerializer(pending, many=True, context=context).data,
+                "unpaid": BookingSerializer(unpaid, many=True, context=context).data,
+                "paid": BookingSerializer(paid, many=True, context=context).data,
                 "completed": BookingSerializer(completed, many=True, context=context).data,
                 "cancelled": BookingSerializer(cancelled, many=True, context=context).data
             },

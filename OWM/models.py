@@ -59,7 +59,7 @@ class Booking(models.Model):
         ('unpaid', 'Unpaid'),
         ('paid', 'Paid'),
         ('completed', 'Completed'),
-        ('canceled', 'Canceled'),
+        ('cancelled', 'Cancelled'),
     ]
     
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -67,7 +67,7 @@ class Booking(models.Model):
     event_date = models.DateField()
     event_time = models.TimeField()
     event_location = models.CharField(max_length=100)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unpaid')
     booked_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
