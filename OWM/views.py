@@ -1145,15 +1145,17 @@ class AdminDashboardView(APIView):
             stats = {}
             try:
                 stats["total_bookings"] = Booking.objects.count()
-                stats["pending_bookings"] = Booking.objects.filter(status="pending").count()
+                stats["unpaid_bookings"] = Booking.objects.filter(status="unpaid").count()
+                stats["paid_bookings"] = Booking.objects.filter(status="paid").count()
                 stats["completed_bookings"] = Booking.objects.filter(status="completed").count()
-                stats["cancelled_bookings"] = Booking.objects.filter(status="canceled").count()
+                stats["cancelled_bookings"] = Booking.objects.filter(status="cancelled").count()
                 logger.debug("Stats collected successfully")
             except Exception as e:
                 logger.error(f"Error getting statistics: {str(e)}")
                 stats = {
                     "total_bookings": 0,
-                    "pending_bookings": 0,
+                    "unpaid_bookings": 0,
+                    "paid_bookings": 0,
                     "completed_bookings": 0,
                     "cancelled_bookings": 0
                 }
