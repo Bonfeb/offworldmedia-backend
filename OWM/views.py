@@ -270,6 +270,7 @@ class UserProfileView(APIView):
 # Service List & Detail View
 class ServiceView(APIView): 
     permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request, pk=None):
         if pk is not None:
