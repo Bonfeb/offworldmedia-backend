@@ -206,7 +206,7 @@ class BookingSerializer(serializers.ModelSerializer):
             validated_data['user'] = request.user
         else:
             raise serializers.ValidationError("Authentication required to create a booking")
-        validated_data['status'] = 'pending'
+        validated_data['status'] = 'unpaid'
         return super().create(validated_data)
 
     def get_service_image_url(self, obj):
