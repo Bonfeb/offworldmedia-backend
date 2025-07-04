@@ -390,7 +390,7 @@ class BookingView(APIView):
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
             "event_location": cart_item.event_location,
-            "status": "pending"  # Default status for new bookings
+            "status": "unpaid"  # Default status for new bookings
         }
         logger.info(f"Booking data: {booking_data}")
         serializer = BookingSerializer(data=booking_data, context={"request": request})
@@ -450,9 +450,9 @@ class BookingView(APIView):
         print("Received Data:", request.data)
         booking = get_object_or_404(Booking, pk=pk, user=request.user)
 
-        if booking.status not in ["pending", "canceled"]:
+        if booking.status not in ["unpaid", "cancelled"]:
             return Response(
-                {"error": "Only Pending or Cancelled bookings can be edited."},
+                {"error": "Only Unpaid or Cancelled bookings can be edited."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -503,9 +503,9 @@ class BookingView(APIView):
                 {"error": "You do not have permission to delete this booking."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        if booking.status not in ["pending"] and not user.is_staff:
+        if booking.status not in ["unpaid"] and not user.is_staff:
             return Response(
-                {"error": "You do not have permission to delete a booking whose status is not Pending"}, status=status.HTTP_403_FORBIDDEN
+                {"error": "You do not have permission to delete a booking whose status is not Unpaid"}, status=status.HTTP_403_FORBIDDEN
                 )
         try:
             booking.delete()
@@ -573,7 +573,7 @@ class STKPushView(APIView):
                 service=service,
                 merchant_request_id=mpesa_response.json().get("MerchantRequestID"),
                 checkout_request_id=mpesa_response.json().get("CheckoutRequestID"),
-                status="Pending"
+                status="Unpaid"
             )
             data = mpesa_response.json()
             return Response(data, status=status.HTTP_200_OK)
