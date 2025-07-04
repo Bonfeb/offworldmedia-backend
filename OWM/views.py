@@ -640,7 +640,6 @@ class UserDashboardView(APIView):
         completed = bookings.filter(status="completed")
         cancelled = bookings.filter(status="cancelled")
 
-
         return Response({
             "user": user_data,
             "bookings": {
