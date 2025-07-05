@@ -1205,8 +1205,9 @@ class AdminDashboardView(APIView):
         booking_id = request.query_params.get('id')
         status_filter = request.query_params.get('status', None)
 
-        print("Received booking request with params:", request.query_params)
-        print("Status Filter:", status_filter)
+        # DEBUG: Log the incoming request
+        print(f"🔍 _get_bookings called with params: {dict(request.query_params)}")
+        print(f"🔍 Status filter: '{status_filter}'")
 
         if booking_id:
             booking = get_object_or_404(Booking, pk=booking_id)
@@ -1215,33 +1216,56 @@ class AdminDashboardView(APIView):
 
         try:
             base_queryset = Booking.objects.select_related('user', 'service')
-            print("Base Booking Queryset:", base_queryset.count())
-            #Manual filtering
-            filtered_bookings = BookingFilter(request.query_params,queryset=base_queryset).qs
-            print("Filtered Booking Queryset:", filtered_bookings.count())
-
-            # Filter by status if provided
+            print(f"🔍 Total bookings in database: {base_queryset.count()}")
+            
+            # Start with base queryset
+            queryset = base_queryset
+            
+            # Apply status filter FIRST (most important filter)
             if status_filter and status_filter.lower() != 'all':
-                print("Filtering by Status:", status_filter.lower())
-                filtered_bookings = filtered_bookings.filter(status=status_filter.lower())
-                print("After Status Filter Queryset:", filtered_bookings.count())
-
+                print(f"🔍 Filtering by status: '{status_filter.lower()}'")
+                queryset = queryset.filter(status=status_filter.lower())
+                print(f"🔍 After status filter: {queryset.count()}")
+                
+                # DEBUG: Show what statuses actually exist
+                all_statuses = base_queryset.values_list('status', flat=True).distinct()
+                print(f"🔍 All statuses in database: {list(all_statuses)}")
+            
+            # Apply other filters using BookingFilter (but only if there are other filters)
+            other_filters = ['user', 'service', 'event_location']
             applied_filters = any(
                 param in request.query_params
-                for param in ['user', 'service', 'event_location']
+                for param in other_filters
             )
-
+            
             if applied_filters:
+                print(f"🔍 Applying additional filters: {[param for param in other_filters if param in request.query_params]}")
+                # Apply BookingFilter to the already status-filtered queryset
+                filtered_bookings = BookingFilter(request.query_params, queryset=queryset).qs
+                print(f"🔍 After additional filters: {filtered_bookings.count()}")
                 queryset = filtered_bookings.order_by('user__username')
             else:
-                queryset = base_queryset.order_by('-event_date', '-event_time')
-            print("Final Booking Queryset:", queryset.count())
+                # No additional filters, just order by date
+                queryset = queryset.order_by('-event_date', '-event_time')
+
+            # DEBUG: Final queryset
+            print(f"🔍 Final queryset count: {queryset.count()}")
+            
+            # DEBUG: Show first few bookings
+            for booking in queryset[:5]:
+                print(f"🔍 Booking {booking.id}: status='{booking.status}', user={booking.user.username}")
 
             serializer = BookingSerializer(queryset, many=True)
+            
+            # DEBUG: Serialized data
+            print(f"🔍 Serialized data length: {len(serializer.data)}")
+            
             return Response(serializer.data)
 
         except Exception as e:
             print(f"🔥 Error in _get_bookings: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response({
                 "error": "Failed to retrieve bookings",
                 "details": str(e)
