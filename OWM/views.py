@@ -1205,6 +1205,9 @@ class AdminDashboardView(APIView):
         booking_id = request.query_params.get('id')
         status_filter = request.query_params.get('status', None)
 
+        print("Received booking request with params:", request.query_params)
+        print("Status Filter:", status_filter)
+
         if booking_id:
             booking = get_object_or_404(Booking, pk=booking_id)
             serializer = BookingSerializer(booking)
@@ -1212,12 +1215,16 @@ class AdminDashboardView(APIView):
 
         try:
             base_queryset = Booking.objects.select_related('user', 'service')
+            print("Base Booking Queryset:", base_queryset.count())
             #Manual filtering
-            filtered_bookings = BookingFilter(request.query_params, queryset=base_queryset).qs
+            filtered_bookings = BookingFilter(request.query_params,queryset=base_queryset).qs
+            print("Filtered Booking Queryset:", filtered_bookings.count())
 
             # Filter by status if provided
             if status_filter and status_filter.lower() != 'all':
+                print("Filtering by Status:", status_filter.lower())
                 filtered_bookings = filtered_bookings.filter(status=status_filter.lower())
+                print("After Status Filter Queryset:", filtered_bookings.count())
 
             applied_filters = any(
                 param in request.query_params
@@ -1228,6 +1235,7 @@ class AdminDashboardView(APIView):
                 queryset = filtered_bookings.order_by('user__username')
             else:
                 queryset = base_queryset.order_by('-event_date', '-event_time')
+            print("Final Booking Queryset:", queryset.count())
 
             serializer = BookingSerializer(queryset, many=True)
             return Response(serializer.data)
