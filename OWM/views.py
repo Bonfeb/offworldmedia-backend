@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+from rest_framework.views import APIView 
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.http import JsonResponse
@@ -27,6 +27,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 import base64, datetime, requests
+from requests.auth import HTTPBasicAuth
 from datetime import timedelta
 from collections import defaultdict
 import logging
@@ -35,6 +36,7 @@ import cloudinary.uploader
 from .models import *
 from .serializers import *
 from .filters import *
+from .utils import get_access_token
 
 # User Registration View
 class RegisterView(APIView):
@@ -512,12 +514,6 @@ class BookingView(APIView):
             return Response({"message": "Booking deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": "Error deleting booking", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-def get_access_token():
-    r = requests.get(
-        "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials", auth=(
-            settings.CONSUMER_KEY, settings.CONSUMER_SECRET))
-    return r.json()['access_token']
 
 class STKPushView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1251,7 +1247,7 @@ class AdminDashboardView(APIView):
             # DEBUG: Final queryset
             print(f"🔍 Final queryset count: {queryset.count()}")
             
-            # DEBUG: Show first few bookings
+            # DEBUG: Show first few bookings 
             for booking in queryset[:5]:
                 print(f"🔍 Booking {booking.id}: status='{booking.status}', user={booking.user.username}")
 
