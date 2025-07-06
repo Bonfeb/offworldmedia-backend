@@ -529,7 +529,7 @@ class STKPushView(APIView):
         if not all([phone_number, amount, booking_id]):
             return Response({"error": "Phone number, amount, and booking ID are required."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            booking = Booking.objects.get(id=booking, user=user)
+            booking = Booking.objects.get(id=booking_id, user=user)
         except Booking.DoesNotExist:
             return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
         
