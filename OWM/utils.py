@@ -1,5 +1,6 @@
 from cloudinary_storage.storage import MediaCloudinaryStorage
-import requests, json
+import requests
+import json
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
 
@@ -11,16 +12,32 @@ class VideoMediaCloudinaryStorage(MediaCloudinaryStorage):
         options['resource_type'] = 'video'
         return options
 
-def get_access_token(request):
+def get_access_token():
     consumer_key = settings.CONSUMER_KEY
     consumer_secret = settings.CONSUMER_SECRET
     api_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-    r = requests.get(
-        api_url,
-        auth=HTTPBasicAuth(consumer_key, consumer_secret))
-    mpesa_access_token = json.loads(r.text)
-    validated_mpesa_access_token = mpesa_access_token['access_token']
+    
+    try:
+        response = requests.get(
+            api_url,
+            auth=HTTPBasicAuth(consumer_key, consumer_secret)
+        )
+        if response.status_code == 200:
+            mpesa_access_token = response.json()
+            access_token = mpesa_access_token.get('access_token')
 
-    print(validated_mpesa_access_token)
-
-get_access_token(request)
+            if access_token:
+                print("Access Token:", access_token)
+                return access_token
+            else:
+                print("Access token not found in response.")
+                return None
+        else:
+            print(f"Failed to get access token: {response.status_code} - {response.text}")
+            return None
+        
+    except requests.RequestException as e:
+        print(f"Error fetching access token: {e}")
+        return None
+            
+get_access_token()
