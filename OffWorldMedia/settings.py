@@ -163,8 +163,8 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
 CONSUMER_KEY = config("CONSUMER_KEY")
 CONSUMER_SECRET = config("CONSUMER_SECRET")
-MPESA_ENVIRONMENT = config("MPESA_ENVIRONMENT", default="sandbox")  # or "production"
-PHONE_NUMBER = config("PHONE_NUMBER", default="254794544826")  # Default phone
+MPESA_ENVIRONMENT = config("MPESA_ENVIRONMENT", default="sandbox")
+PHONE_NUMBER = config("PHONE_NUMBER", default="254794544826")
 SHORTCODE = config("SHORTCODE")
 PASSKEY = config("PASSKEY")
 CALLBACK_URL = config("CALLBACK_URL")
