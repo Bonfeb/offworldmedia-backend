@@ -524,9 +524,9 @@ class STKPushView(APIView):
         raw_phone_number = request.data.get("phone_number")
         phone_number = format_mpesa_phone_number(raw_phone_number)
         amount = request.data.get("amount")
-        booking = request.data.get("booking_id")
+        booking_id = request.data.get("booking_id")
 
-        if not all([phone_number, amount, booking]):
+        if not all([phone_number, amount, booking_id]):
             return Response({"error": "Phone number, amount, and booking ID are required."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             booking = Booking.objects.get(id=booking, user=user)
