@@ -26,6 +26,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
+from django.utils.timezone import now
 import base64, datetime, requests
 from requests.auth import HTTPBasicAuth
 from datetime import timedelta
@@ -36,7 +37,7 @@ import cloudinary.uploader
 from .models import *
 from .serializers import *
 from .filters import *
-from .utils import get_access_token
+from .utils import get_access_token, format_mpesa_phone_number
 
 # User Registration View
 class RegisterView(APIView):
@@ -520,7 +521,8 @@ class STKPushView(APIView):
 
     def post(self, request):
         user = request.user
-        phone_number = request.data.get("phone_number")
+        raw_phone_number = request.data.get("phone_number")
+        phone_number = format_mpesa_phone_number(raw_phone_number)
         amount = request.data.get("amount")
         booking = request.data.get("booking_id")
 
@@ -534,7 +536,7 @@ class STKPushView(APIView):
         service = booking.service.name if hasattr(booking.service, 'name') else str(booking.service)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        password = base64.base64encode((settings.SHORTCODE + settings.PASSKEY + timestamp).encode()).decode()
+        password = base64.b64encode((settings.SHORTCODE + settings.PASSKEY + timestamp).encode()).decode()
 
         access_token = get_access_token()
         headers = {
@@ -542,14 +544,16 @@ class STKPushView(APIView):
             "Content-Type": "application/json"
         }
         
+        till = 4323716
+
         payload = {
-            "BusinessShortCode": settings.SHORTCODE,
+            "BusinessShortCode": till,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
+            "TransactionType": "CustomerBuyGoodsOnline", #"CustomerToCustomerTransfer"
             "Amount": amount,
             "PartyA": phone_number,
-            "PartyB": settings.SHORTCODE,
+            "PartyB": till, #for Paybill/Till >> settings.SHORTCODE,
             "PhoneNumber": phone_number,
             "CallBackURL": settings.CALLBACK_URL,
             "AccountReference": f"Booking-{booking.id}",
@@ -604,6 +608,47 @@ class MpesaCallbackView(APIView):
             
                 transaction.booking.status = 'paid'
                 transaction.booking.save()
+
+                subject = "Payment Received!"
+                message = f"""
+                <html>
+                    <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; margin: 0; padding: 20px;">
+                        <div style="background-color: #ffffff; border-radius: 10px; padding: 30px; max-width: 600px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #2c3e50;">Payment Confirmation</h2>
+
+                        <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                            Hello dear <strong>{transaction.booking.user.username}</strong>,
+                        </p>
+
+                        <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                            Your payment of <strong>Ksh {transaction.amount}</strong> for the service <strong>‘{transaction.service}’</strong> has been successfully received.
+                        </p>
+
+                        <div style="margin: 20px 0; padding: 15px; background-color: #f7f7f7; border-radius: 8px;">
+                            <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                            <strong>MPesa Receipt Number:</strong> {transaction.mpesa_receipt_number}
+                            </p>
+                        </div>
+
+                        <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                            Thank you for choosing our services!
+                        </p>
+
+                        <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                            Best regards,<br>
+                            <strong>Offworld Media Team</strong>
+                        </p>
+
+                        <div style="margin-top: 30px; font-size: 14px; color: #777777; text-align: center;">
+                            &copy; now().year Offworld Media Africa. All rights reserved.
+                        </div>
+                        </div>
+                    </body>
+                </html>
+
+                """
+                recipient_email = transaction.booking.user.email
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [recipient_email])
                 
             transaction.save()
         except MpesaTransaction.DoesNotExist:

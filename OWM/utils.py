@@ -3,6 +3,7 @@ import requests
 import json
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
+import re
 
 request = ""
 
@@ -41,3 +42,23 @@ def get_access_token():
         return None
             
 get_access_token()
+
+def format_mpesa_phone_number(phone_number):
+    """
+    Convert phone number to M-Pesa format (2547XXXXXXXX)
+    Accepts formats: 07XXXXXXXX, +2547XXXXXXXX, 2547XXXXXXXX
+    """
+    # Remove all non-digit characters
+    cleaned = re.sub(r'[^0-9]', '', phone_number)
+    
+    if cleaned.startswith('0') and len(cleaned) == 10:
+        # Convert 07XXXXXXXX to 2547XXXXXXXX
+        return '254' + cleaned[1:]
+    elif cleaned.startswith('254') and len(cleaned) == 12:
+        # Already in correct format
+        return cleaned
+    elif len(cleaned) == 9 and not cleaned.startswith('0'):
+        # Handle 7XXXXXXXX case
+        return '254' + cleaned
+    else:
+        raise ValueError("Invalid phone number format")
