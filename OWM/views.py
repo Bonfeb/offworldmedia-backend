@@ -543,17 +543,15 @@ class STKPushView(APIView):
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
         }
-        
-        till = 4323716
 
         payload = {
-            "BusinessShortCode": till,
+            "BusinessShortCode": settings.SHORTCODE,
             "Password": password,
             "Timestamp": timestamp,
             "TransactionType": "CustomerBuyGoodsOnline", #"CustomerToCustomerTransfer"
             "Amount": amount,
             "PartyA": phone_number,
-            "PartyB": till, #for Paybill/Till >> settings.SHORTCODE,
+            "PartyB": settings.SHORTCODE,
             "PhoneNumber": phone_number,
             "CallBackURL": settings.CALLBACK_URL,
             "AccountReference": f"Booking-{booking.id}",
