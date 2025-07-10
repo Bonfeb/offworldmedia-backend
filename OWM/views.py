@@ -562,6 +562,8 @@ class STKPushView(APIView):
             "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
             json=payload, headers=headers
         )
+        print("STKK Push Sent to MPesa API")
+        print(f"MPesa Response: {mpesa_response.status_code} - {mpesa_response.text}")
 
         if mpesa_response.status_code == 200:
             MpesaTransaction.objects.create(
@@ -573,9 +575,12 @@ class STKPushView(APIView):
                 checkout_request_id=mpesa_response.json().get("CheckoutRequestID"),
                 status="Unpaid"
             )
+            print("Mpesa transaction created successfully")
+            print(f"Mpesa Transaction ID: {mpesa_response.json().get('CheckoutRequestID')}")
             data = mpesa_response.json()
             return Response(data, status=status.HTTP_200_OK)
-        
+            
+        print(f"MPesa Error Response: {mpesa_response.status_code} - {mpesa_response.text}")
         return Response({"error": mpesa_response.json()}, status=mpesa_response.status_code)
 
 # Mpesa Callback View
