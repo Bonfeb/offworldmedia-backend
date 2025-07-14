@@ -596,9 +596,11 @@ class STKPushView(APIView):
         print(f"👤 Authenticated user: {user.username}")
 
         raw_phone_number = request.data.get("phone_number")
-        amount = request.data.get("amount")
+        raw_amount = request.data.get("amount")
         booking_id = request.data.get("booking_id")
 
+        amount = int(float(raw_amount))
+        
         print(f"📞 Raw phone number: {raw_phone_number}")
         print(f"💰 Amount: {amount}")
         print(f"📄 Booking ID: {booking_id}")
@@ -633,7 +635,7 @@ class STKPushView(APIView):
         try:
             response = cl.stk_push(
                 phone_number,
-                float(amount),
+                amount,
                 account_reference,
                 transaction_desc,
                 callback_url=None  # will default to settings.MPESA_CALLBACK_URL
