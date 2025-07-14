@@ -58,7 +58,7 @@ class RegisterView(APIView):
                 user.groups.add(customer_group)
 
                 refresh = RefreshToken.for_user(user)
-                access_token = str(refresh.access_token)
+                mpesa_token = str(refresh.access_token)
 
                 response = Response({"message": "Registration successful"}, status=status.HTTP_201_CREATED)
                 response.set_cookie(
@@ -631,11 +631,11 @@ class STKPushView(APIView):
         print(f"🔐 Encoded password generated")
 
         print("🔑 Getting MPESA access token")
-        access_token = get_access_token()
-        print(f"🔓 Access token received: {access_token[:10]}...")
+        mpesa_token = get_access_token()
+        print(f"🔓 Access token received: {mpesa_token[:10]}...")
 
         headers = {
-            "Authorization": f"Bearer {access_token}",
+            "Authorization": f"Bearer {mpesa_token}",
             "Content-Type": "application/json"
         }
 
@@ -643,7 +643,7 @@ class STKPushView(APIView):
             "BusinessShortCode": settings.SHORTCODE,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerBuyGoodsOnline",
+            "TransactionType": "CustomerPayBillOnline",
             "Amount": amount,
             "PartyA": phone_number,
             "PartyB": settings.SHORTCODE,

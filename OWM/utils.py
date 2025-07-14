@@ -25,16 +25,18 @@ def get_access_token():
         )
         if response.status_code == 200:
             mpesa_access_token = response.json()
-            access_token = mpesa_access_token.get('access_token')
+            mpesa_token = mpesa_access_token.get('access_token')
 
-            if access_token:
-                print("Access Token:", access_token)
-                return access_token
+            if mpesa_token:
+                print("Access Token Received:", mpesa_token)
+                return mpesa_token
             else:
-                print("Access token not found in response.")
+                print("❌ Access token not found in response JSON.")
+                print("🔍 Full response JSON:", mpesa_access_token)
                 return None
         else:
-            print(f"Failed to get access token: {response.status_code} - {response.text}")
+            print(f"❌ Failed to get token: {response.status_code}")
+            print(f"🔍 Response Content: {response.text}")
             return None
         
     except requests.RequestException as e:
