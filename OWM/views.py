@@ -26,6 +26,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
+from django_daraja.mpesa.core import MpesaClient
 from django.utils.timezone import now
 import base64, datetime, requests
 from requests.auth import HTTPBasicAuth
@@ -590,12 +591,14 @@ class STKPushView(APIView):
     def post(self, request):
         print("📥 STKPushView POST request received")
 
+        cl = MpesaClient()
         user = request.user
         print(f"👤 Authenticated user: {user.username}")
 
         raw_phone_number = request.data.get("phone_number")
         amount = request.data.get("amount")
         booking_id = request.data.get("booking_id")
+
         print(f"📞 Raw phone number: {raw_phone_number}")
         print(f"💰 Amount: {amount}")
         print(f"📄 Booking ID: {booking_id}")
@@ -623,66 +626,49 @@ class STKPushView(APIView):
         service = booking.service.name if hasattr(booking.service, 'name') else str(booking.service)
         print(f"🔧 Booking service: {service}")
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        password = base64.b64encode(
-            (settings.SHORTCODE + settings.PASSKEY + timestamp).encode()
-        ).decode()
-        print(f"🕒 Timestamp: {timestamp}")
-        print(f"🔐 Encoded password generated")
+        account_reference = f"Booking-{booking.id}"
+        transaction_desc = f"Payment for service {service}"
 
-        print("🔑 Getting MPESA access token")
-        mpesa_token = get_access_token()
-        print(f"🔓 Access token received: {mpesa_token[:10]}...")
-
-        headers = {
-            "Authorization": f"Bearer {mpesa_token}",
-            "Content-Type": "application/json"
-        }
-
-        payload = {
-            "BusinessShortCode": settings.SHORTCODE,
-            "Password": password,
-            "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
-            "Amount": amount,
-            "PartyA": phone_number,
-            "PartyB": settings.SHORTCODE,
-            "PhoneNumber": phone_number,
-            "CallBackURL": settings.CALLBACK_URL,
-            "AccountReference": f"Booking-{booking.id}",
-            "TransactionDesc": f"Payment for service {service}"
-        }
-
-        print("🚀 Sending STK Push request to MPESA API...")
-        mpesa_response = requests.post(
-            "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-            json=payload, headers=headers
-        )
-
-        print("📡 MPESA API response received")
-        print(f"🔁 Status code: {mpesa_response.status_code}")
-        print(f"📨 Response body: {mpesa_response.text}")
-
-        if mpesa_response.status_code == 200:
-            response_data = mpesa_response.json()
-            MpesaTransaction.objects.create(
-                booking=booking,
-                phone_number=phone_number,
-                amount=amount,
-                service=service,
-                merchant_request_id=response_data.get("MerchantRequestID"),
-                checkout_request_id=response_data.get("CheckoutRequestID"),
-                status="Unpaid"
+        print("🚀 Sending STK Push request via MpesaClient...")
+        try:
+            response = cl.stk_push(
+                phone_number,
+                float(amount),
+                account_reference,
+                transaction_desc,
+                callback_url=None  # will default to settings.MPESA_CALLBACK_URL
             )
-            print("✅ Mpesa transaction saved to database")
-            print(f"🆔 CheckoutRequestID: {response_data.get('CheckoutRequestID')}")
-            return Response(response_data, status=status.HTTP_200_OK)
 
-        print("❌ MPESA API call failed")
-        return Response(
-            {"error": mpesa_response.json()},
-            status=mpesa_response.status_code
-        )
+            print("📡 MPESA API response received")
+            print(f"🔁 Status code: {response.status_code}")
+            print(f"📨 Response body: {response.text}")
+
+            if response.status_code == 200:
+                response_data = response.json()
+                MpesaTransaction.objects.create(
+                    booking=booking,
+                    phone_number=phone_number,
+                    amount=amount,
+                    service=service,
+                    merchant_request_id=response_data.get("MerchantRequestID"),
+                    checkout_request_id=response_data.get("CheckoutRequestID"),
+                    status="Unpaid"
+                )
+                print("✅ Mpesa transaction saved to database")
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                print("❌ MPESA API call failed")
+                return Response(
+                    {"error": response.json()},
+                    status=response.status_code
+                )
+
+        except Exception as e:
+            print("🔥 Exception during STK push:", str(e))
+            return Response(
+                {"error": "An error occurred while processing the payment."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 # Mpesa Callback View
 class MpesaCallbackView(APIView):

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'django_extensions',
     'django_filters',
+    'django_daraja',
 ]
 
 MIDDLEWARE = [

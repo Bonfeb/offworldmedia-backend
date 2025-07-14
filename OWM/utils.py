@@ -42,10 +42,6 @@ def get_access_token():
     except requests.RequestException as e:
         print(f"Error fetching access token: {e}")
         return None
-            
-get_access_token()
-
-import re
 
 def format_mpesa_phone_number(phone_number):
     """
