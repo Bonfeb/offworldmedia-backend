@@ -650,7 +650,7 @@ class STKPushView(APIView):
                 amount,
                 account_reference,
                 transaction_desc,
-                callback_url=None  # will default to settings.MPESA_CALLBACK_URL
+                callback_url=settings.MPESA_CALLBACK_URL  # will default to settings.MPESA_CALLBACK_URL
             )
 
             print("📡 MPESA API response received")
