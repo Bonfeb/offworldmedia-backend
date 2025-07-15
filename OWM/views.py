@@ -591,6 +591,18 @@ class STKPushView(APIView):
     def post(self, request):
         print("📥 STKPushView POST request received")
 
+        def get_fresh_token(self):
+            url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+            response = requests.get(url, auth=HTTPBasicAuth(settings.CONSUMER_KEY, settings.CONSUMER_SECRET))
+            if response.status_code == 200:
+                token = response.json().get("access_token")
+                print("✅ Fresh token fetched:", token)
+                return token
+            print("❌ Failed to get token:", response.text)
+            return None
+        
+        MpesaClient.access_token = property(get_fresh_token)
+
         cl = MpesaClient()
         user = request.user
         print(f"👤 Authenticated user: {user.username}")
