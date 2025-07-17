@@ -38,7 +38,8 @@ import cloudinary.uploader
 from .models import *
 from .serializers import *
 from .filters import *
-from .utils import get_access_token, format_mpesa_phone_number
+from .utils import get_access_token, format_mpesa_phone_number, generate_invoice_number
+from .signals import booking_successful
 
 # User Registration View
 class RegisterView(APIView):
@@ -371,6 +372,8 @@ class BookingView(APIView):
         """Handles booking creation."""
         logger = logging.getLogger(__name__)
         user = request.user
+        invoice_number = generate_invoice_number()
+
         if not user.is_authenticated:
             return Response({"error": "You must be logged in to book a service."}, status=status.HTTP_401_UNAUTHORIZED)
         
@@ -387,6 +390,9 @@ class BookingView(APIView):
 
         if not cart_item:
             return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
+        
+        while Booking.objects.filter(invoice_number=invoice_number).exists():
+            invoice_number = generate_invoice_number
 
         booking_data = {
             "user": user.id,
@@ -394,6 +400,7 @@ class BookingView(APIView):
             "event_date": cart_item.event_date,
             "event_time": cart_item.event_time,
             "event_location": cart_item.event_location,
+            "invoice_number": invoice_number,
             "status": "unpaid"  # Default status for new bookings
         }
         logger.info(f"Booking data: {booking_data}")
@@ -415,7 +422,10 @@ class BookingView(APIView):
         
         try:
             booking = serializer.save()
+            booking_successful.send(sender=Booking, booking=booking)
+
             logger.info(f"Booking created successfully: {booking.id}")
+        
         except Exception as e:
             logger.error(f"Error creating booking: {str(e)}")
             return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -1161,13 +1171,24 @@ class AdminDashboardView(APIView):
 
     def post(self, request):
         """Handle POST requests - create booking"""
+        data = request.data.copy()
+        invoice_number = generate_invoice_number()
+        while Booking.objects.filter(invoice_number=invoice_number).exists():
+            invoice_number = generate_invoice_number
+            ()
+
+        data['invoice_number'] = invoice_number
+
         serializer = BookingSerializer(data=request.data, context={'request': request})
+
         if not serializer.is_valid():
             print("Serializer errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            serializer.save()
+            booking = serializer.save()
+            booking_successful.send(sender=Booking, booking=booking)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             print(f"Error saving booking: {str(e)}")

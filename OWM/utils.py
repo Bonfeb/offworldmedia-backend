@@ -4,6 +4,8 @@ import json
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
 import re
+import datetime
+import random
 
 request = ""
 
@@ -92,3 +94,9 @@ def format_mpesa_phone_number(phone_number):
         raise ValueError("Resulting phone number format is invalid (must be 2547XXXXXXXX)")
     
     return formatted
+
+def generate_invoice_number():
+    date_str = datetime.datetime.now().strftime('%Y%m%d')
+    unique_id = random.randint(100000, 999999)
+    
+    return f"INV-{date_str}-{unique_id}"

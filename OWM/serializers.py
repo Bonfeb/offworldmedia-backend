@@ -150,7 +150,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ['id', 'user','user_id', 'phone', 'service', 'service_id', 'status', 'event_date', 'event_time', 'event_location', 'booked_at', 'service_image_url']
+        fields = ['id', 'user','user_id', 'phone', 'service', 'service_id', 'status', 'event_date', 'event_time', 'event_location', 'booked_at', 'invoice_number', 'service_image_url']
 
     extra_kwargs = {
             'status': {'required': False},

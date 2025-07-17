@@ -69,6 +69,7 @@ class Booking(models.Model):
     event_location = models.CharField(max_length=100)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unpaid')
     booked_at = models.DateTimeField(auto_now_add=True)
+    invoice_number = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         verbose_name = "Booking"
@@ -142,6 +143,9 @@ class TeamMember(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     profile_pic = CloudinaryField('team_images', blank=True, null=True)
     bio = models.TextField()
+    facebook_link = models.CharField(max_length=255, blank=True, null=True)
+    twitter_link = models.CharField(max_length=255, blank=True, null=True)
+    instagram_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name = "TeamMember"
