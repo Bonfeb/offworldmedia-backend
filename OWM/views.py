@@ -1145,7 +1145,7 @@ class TeamView(APIView):
 #Admin Views
 class AdminDashboardView(APIView):
     permission_classes = [IsAdminUser]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
         """Handle all GET requests - dashboard stats, bookings, users, messages or reviews"""
