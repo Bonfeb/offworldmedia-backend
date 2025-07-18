@@ -20,7 +20,7 @@ def send_welcome_email(sender, instance, created, **kwargs):
         subject = "Welcome to OffWorld Media Africa! "
         plain_message = f"Hi {instance.username},\n\nThank you for registering. We're excited to have you with us!"
 
-        html_message = render_to_string('OWM/welcome_email.html',{
+        html_message = render_to_string('welcome_email.html',{
             'username': instance.username,
         })
         
@@ -57,7 +57,7 @@ def send_booking_email(sender, booking, **kwargs):
         'logo_url': 'https://yourdomain.com/static/logo.png',
     }
 
-    html_invoice = render_to_string('OWM/booking_email.html', context)
+    html_invoice = render_to_string('booking_email.html', context)
     text_email = strip_tags(html_invoice)
 
     # 🔧 Generate PDF
