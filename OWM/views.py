@@ -926,7 +926,7 @@ class ImageView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
-        images = Image.objects.all()
+        images = Image.objects.all().order_by('-uploaded_at')
         serializer = ImageSerializer(images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -952,7 +952,7 @@ class VideoView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
-        videos = Video.objects.all()
+        videos = Video.objects.all().order_by('-uploaded_at')
         serializer = VideoSerializer(videos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

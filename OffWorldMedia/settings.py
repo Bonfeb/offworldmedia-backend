@@ -24,7 +24,7 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = [
-    config("RENDER_BASE_URL"),
+    config("BASE_URL"),
     ]
 
 CORS_ALLOWED_ORIGINS = [
