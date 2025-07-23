@@ -442,7 +442,7 @@ class BookingView(APIView):
             'id': booking.id,
             'user_name': user.get_full_name(),
             'user_email': user.email,
-            'service_name': booking.service.name,
+            'service_category': booking.service.category,
             'event_date': booking.event_date,
             'event_time': booking.event_time,
             'event_location': booking.event_location,
@@ -1504,7 +1504,7 @@ class AdminDashboardView(APIView):
 
     def _get_services_list(self, request):
         category_filter = request.query_params.get('category', None)
-        services = Service.objects.all().order_by('name')
+        services = Service.objects.all().order_by('category')
 
         if category_filter and category_filter.lower() != 'all':
             services = services.filter(category=category_filter.lower())

@@ -10,9 +10,9 @@ class CustomUserAdmin(admin.ModelAdmin):
 # Register Service
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price')
+    list_display = ('category', 'price')
     list_filter = ('category',)
-    search_fields = ('name',)
+    search_fields = ('category',)
 
 # Register Booking
 @admin.register(Booking)

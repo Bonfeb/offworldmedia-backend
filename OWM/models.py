@@ -21,9 +21,10 @@ class CustomUser(AbstractUser):
 # Service Model
 class Service(models.Model):
     CATEGORY_CHOICES = [
-        ('video', 'Video Recording'),
-        ('audio', 'Audio Recording'),
-        ('photo', 'Photo Shooting'),
+        ('photo-video', 'Photo & Video Shooting'),
+        ('audio', 'Music Production'),
+        ('graphic', 'Graphic Designing'),
+        ('broadcasting', 'Digital Broadcasting'),
     ]
 
     AUDIO_SUBCATEGORY_CHOICES = [
@@ -34,7 +35,6 @@ class Service(models.Model):
         ('music_video', 'Music Video Production'),
     ]
     
-    name = models.CharField(max_length=100)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     audio_category = models.CharField(max_length=20, choices=AUDIO_SUBCATEGORY_CHOICES, blank=True, null=True) # This field is optional and only required for audio services
     description = models.TextField()
@@ -51,7 +51,7 @@ class Service(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return self.category
 
 # Booking Model
 class Booking(models.Model):
