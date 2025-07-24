@@ -287,8 +287,10 @@ class ServiceView(APIView):
             except Service.DoesNotExist:
                 return Response({"error": "Service Not Found"}, status=status.HTTP_404_NOT_FOUND)
             
-        services = Service.objects.all()
-        serialized_services = ServiceSerializer(services, many=True, context={'request': request}).data
+        queryset = Service.objects.all()
+        filtered_services = ServiceFilter(request.GET, queryset=queryset).qs
+
+        serialized_services = ServiceSerializer(filtered_services, many=True, context={'request': request}).data
 
         grouped_services = defaultdict(lambda: defaultdict(list))
         for service_data in serialized_services:
