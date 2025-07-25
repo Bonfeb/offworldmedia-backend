@@ -649,7 +649,7 @@ class STKPushView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        service = booking.service.name if hasattr(booking.service, 'name') else str(booking.service)
+        service = booking.service.category if hasattr(booking.service, 'category') else str(booking.service)
         print(f"🔧 Booking service: {service}")
 
         account_reference = f"Booking-{booking.id}"

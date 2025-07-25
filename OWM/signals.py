@@ -38,7 +38,7 @@ def send_welcome_email(sender, instance, created, **kwargs):
 @receiver(booking_successful)
 def send_booking_email(sender, booking, **kwargs):
     user = booking.user
-    service = booking.service
+    service = booking.service.category
     price = f"{service.price:.2f}"
 
     # Generate invoice number
