@@ -1311,13 +1311,38 @@ class AdminDashboardView(APIView):
         
         try:
             stats = {}
+            percentages = {}
             try:
-                stats["total_bookings"] = Booking.objects.count()
-                stats["unpaid_bookings"] = Booking.objects.filter(status="unpaid").count()
-                stats["paid_bookings"] = Booking.objects.filter(status="paid").count()
-                stats["completed_bookings"] = Booking.objects.filter(status="completed").count()
-                stats["cancelled_bookings"] = Booking.objects.filter(status="cancelled").count()
-                logger.debug("Stats collected successfully")
+                total = Booking.objects.count()
+                unpaid_bookings = Booking.objects.filter(status="unpaid").count()
+                paid_bookings = Booking.objects.filter(status="paid").count()
+                completed_bookings = Booking.objects.filter(status="completed").count()
+                cancelled_bookings = Booking.objects.filter(status="cancelled").count()
+
+                stats = {
+                    "total_bookings": total,
+                    "unpaid_bookings": unpaid_bookings,
+                    "paid_bookings": paid_bookings,
+                    "completed_bookings": completed_bookings,
+                    "cancelled_bookings": cancelled_bookings
+                }
+                
+                if total > 0:
+                    percentages = {
+                        "paid": round((paid_bookings / total) * 100, 2),
+                        "unpaid": round((unpaid_bookings / total) * 100, 2),
+                        "completed": round((completed_bookings / total) * 100, 2),
+                        "cancelled": round((cancelled_bookings / total) * 100, 2)
+                    }
+
+                else:
+                    percentages = {
+                        "paid": 0,
+                        "unpaid": 0,
+                        "completed": 0,
+                        "cancelled": 0
+                    }
+
             except Exception as e:
                 logger.error(f"Error getting statistics: {str(e)}")
                 stats = {
@@ -1326,6 +1351,12 @@ class AdminDashboardView(APIView):
                     "paid_bookings": 0,
                     "completed_bookings": 0,
                     "cancelled_bookings": 0
+                }
+                percentages = {
+                    "paid": 0,
+                    "unpaid": 0,
+                    "completed": 0,
+                    "cancelled": 0
                 }
                 
             # Add recent bookings
@@ -1357,6 +1388,7 @@ class AdminDashboardView(APIView):
             # Return just the stats first to ensure this works
             return Response({
                 "stats": stats,
+                "percentages": percentages,
                 "recent_bookings": booking_data,
                 "recent_reviews": review_data,
                 "recent_messages": message_data
