@@ -38,7 +38,7 @@ import cloudinary.uploader
 from .models import *
 from .serializers import *
 from .filters import *
-from .utils import get_access_token, format_mpesa_phone_number, generate_invoice_number
+from .utils import get_access_token, format_mpesa_phone_number, generate_invoice_number, generate_users_pdf
 from .signals import booking_successful
 
 # User Registration View
@@ -1471,12 +1471,16 @@ class AdminDashboardView(APIView):
                 "details": str(e)
             }, status=500)
 
-    def _get_users_list(self):
+    def _get_users_list(self, request):
         logger = logging.getLogger(__name__)
         """Return list of users or detailed info for a specific user"""
         print("Received request with params:", self.request.GET)
         user_id = self.request.query_params.get('user_id')
         logger.info(f"User ID from request: {user_id}")
+
+        if request.GET.get('pdf') == 'true':
+            return generate_users_pdf(request)
+
         if user_id:
             try:
                 user_id = int(user_id)

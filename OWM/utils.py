@@ -3,9 +3,14 @@ import requests
 import json
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
+from django.template.loader import render_to_string
+from weasyprint import HTML
+from django.http import HttpResponse
 import re
 import datetime
 import random
+from .models import *
+from .filters import *
 
 request = ""
 
@@ -100,3 +105,51 @@ def generate_invoice_number():
     unique_id = random.randint(100000, 999999)
     
     return f"INV-{date_str}-{unique_id}"
+
+def generate_users_pdf(request):
+    try:
+        # Start with all non-staff, non-superuser users
+        users = CustomUser.objects.filter(is_staff=False, is_superuser=False)
+
+        # Apply filters from query params
+        username = request.GET.get('username')
+        if username:
+            users = users.filter(username__icontains=username)
+
+        email = request.GET.get('email')
+        if email:
+            users = users.filter(email__icontains=email)
+
+        # If you already have a DRF/Django FilterSet, use it instead
+        # users = CustomUserFilter(request.GET, queryset=users).qs
+
+        # Order the queryset
+        users = CustomUserFilter(request.GET, queryset=users).qs.order_by('username')
+
+        if not users.exists():
+            return HttpResponse("No users found", status=404)
+
+        context = {
+            'pdf_users': users,
+            'total_users': users.count(),
+            'company_name': 'Offworld Media Africa',
+            'company_email': 'offworldmediaafrica@gmail.com',
+            'company_x': 'offworldmedia_africa',
+            'company_facebook': 'Offworld Media Africa',
+            'company_youtube': 'Offworld Media Africa',
+            'generation_date': datetime.now().strftime('%B %d, %Y at %H:%M'),
+        }
+
+        html_string = render_to_string('users_pdf.html', context)
+        html = HTML(string=html_string, base_url=request.build_absolute_uri())
+        pdf_result = html.write_pdf()
+
+        filename = f"Offworld_Media_Users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+        response = HttpResponse(pdf_result, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return HttpResponse("Error generating PDF", status=500)
