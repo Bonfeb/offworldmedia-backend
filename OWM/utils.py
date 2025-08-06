@@ -4,9 +4,10 @@ import json
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from weasyprint import HTML
 from django.http import HttpResponse
-import re
+import re,os
 import datetime
 import random
 from .models import *
@@ -128,6 +129,9 @@ def generate_users_pdf(request):
 
         if not users.exists():
             return HttpResponse("No users found", status=404)
+        
+        logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo.ico')
+        logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/logo.ico')
 
         context = {
             'pdf_users': users,
@@ -138,6 +142,7 @@ def generate_users_pdf(request):
             'company_facebook': 'Offworld Media Africa',
             'company_youtube': 'Offworld Media Africa',
             'generation_date': datetime.now().strftime('%B %d, %Y at %H:%M'),
+            'logo_url': logo_url,
         }
 
         html_string = render_to_string('users_pdf.html', context)
@@ -183,13 +188,16 @@ def filter_bookings(params):
 
     return queryset.order_by('user__username', '-event_date', '-event_time')
 
-def generate_bookings_pdf(queryset, status_filter='All'):
+def generate_bookings_pdf(request, queryset, status_filter='All'):
     """
     Generate PDF from a queryset of bookings.
     Returns an HttpResponse with the PDF file.
     """
     if not queryset.exists():
         return HttpResponse("No bookings found", status=404)
+    
+    logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo.ico')
+    logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/logo.ico')
 
     context = {
         'pdf_bookings': queryset,
@@ -201,6 +209,7 @@ def generate_bookings_pdf(queryset, status_filter='All'):
         'company_facebook': 'Offworld Media Africa',
         'company_youtube': 'Offworld Media Africa',
         'generation_date': datetime.now().strftime('%B %d, %Y at %H:%M'),
+        'logo_url': logo_url,
     }
 
     html_string = render_to_string('bookings_pdf.html', context)

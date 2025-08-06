@@ -5,8 +5,9 @@ from django.conf import settings
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.utils.html import strip_tags
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from weasyprint import HTML
-import tempfile
+import tempfile, os
 import datetime
 from . models import *
 
@@ -45,8 +46,12 @@ def send_booking_email(sender, booking, **kwargs):
     invoice_number = booking.invoice_number
 
     subject = '🎉 Booking Confirmed – Your Invoice'
-    from_email = 'noreply@yourdomain.com'
+    from_email = 'offworldmediaafrica@gmail.com'
     to_email = [user.email]
+
+    logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo.ico')
+    logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/logo.png')
+
 
     context = {
         'user': user,
@@ -54,7 +59,7 @@ def send_booking_email(sender, booking, **kwargs):
         'booking': booking,
         'price': price,
         'invoice_number': invoice_number,
-        'logo_url': 'https://yourdomain.com/static/logo.png',
+        'logo_url': logo_url,
     }
 
     html_invoice = render_to_string('booking_email.html', context)

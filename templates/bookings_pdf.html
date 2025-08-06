@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -60,7 +62,7 @@
 <body>
 
 <div class="header">
-    <img src="{{ STATIC_ROOT }}/images/logo.png" alt="Company Logo">
+    <img src="{{ logo_url }}" alt="Company Logo">
     <div class="company-info">
         <strong>{{ company_name }}</strong><br>
         Email: {{ company_email }} | X: {{ company_x }}<br>
