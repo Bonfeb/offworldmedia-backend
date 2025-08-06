@@ -130,8 +130,8 @@ def generate_users_pdf(request):
         if not users.exists():
             return HttpResponse("No users found", status=404)
         
-        logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo.ico')
-        logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/logo.ico')
+        logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'Logo.ico')
+        logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/Logo.ico')
 
         context = {
             'pdf_users': users,
@@ -196,8 +196,8 @@ def generate_bookings_pdf(request, queryset, status_filter='All'):
     if not queryset.exists():
         return HttpResponse("No bookings found", status=404)
     
-    logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo.ico')
-    logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/logo.ico')
+    logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'Logo.ico')
+    logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/Logo.ico')
 
     context = {
         'pdf_bookings': queryset,

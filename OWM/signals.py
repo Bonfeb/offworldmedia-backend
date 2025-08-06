@@ -49,8 +49,8 @@ def send_booking_email(sender, booking, **kwargs):
     from_email = 'offworldmediaafrica@gmail.com'
     to_email = [user.email]
 
-    logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo.ico')
-    logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/logo.png')
+    logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'Logo.ico')
+    logo_url = f'file://{logo_path}' if os.path.exists(logo_path) else static('images/Logo.ico')
 
 
     context = {
