@@ -38,7 +38,7 @@ import cloudinary.uploader
 from .models import *
 from .serializers import *
 from .filters import *
-from .utils import get_access_token, format_mpesa_phone_number, generate_invoice_number, generate_users_pdf
+from .utils import *
 from .signals import booking_successful
 
 # User Registration View
@@ -1402,66 +1402,22 @@ class AdminDashboardView(APIView):
         
     def _get_bookings(self, request):
         """Handle bookings retrieval with various filters and options"""
-        booking_id = request.query_params.get('id')
-        status_filter = request.query_params.get('status', None)
-
-        # DEBUG: Log the incoming request
-        print(f"🔍 _get_bookings called with params: {dict(request.query_params)}")
-        print(f"🔍 Status filter: '{status_filter}'")
-
-        if booking_id:
-            booking = get_object_or_404(Booking, pk=booking_id)
-            serializer = BookingSerializer(booking)
-            return Response(serializer.data)
-
         try:
-            base_queryset = Booking.objects.select_related('user', 'service')
-            print(f"🔍 Total bookings in database: {base_queryset.count()}")
-            
-            # Start with base queryset
-            queryset = base_queryset
-            
-            # Apply status filter FIRST (most important filter)
-            if status_filter and status_filter.lower() != 'all':
-                print(f"🔍 Filtering by status: '{status_filter.lower()}'")
-                queryset = queryset.filter(status=status_filter.lower())
-                print(f"🔍 After status filter: {queryset.count()}")
-                
-                # DEBUG: Show what statuses actually exist
-                all_statuses = base_queryset.values_list('status', flat=True).distinct()
-                print(f"🔍 All statuses in database: {list(all_statuses)}")
-            
-            # Apply other filters using BookingFilter (but only if there are other filters)
-            other_filters = ['user', 'service', 'event_location']
-            applied_filters = any(
-                param in request.query_params
-                for param in other_filters
-            )
-            
-            if applied_filters:
-                print(f"🔍 Applying additional filters: {[param for param in other_filters if param in request.query_params]}")
-                # Apply BookingFilter to the already status-filtered queryset
-                filtered_bookings = BookingFilter(request.query_params, queryset=queryset).qs
-                print(f"🔍 After additional filters: {filtered_bookings.count()}")
-                queryset = filtered_bookings.order_by('user__username')
-            else:
-                # No additional filters, just order by date
-                queryset = queryset.order_by('-event_date', '-event_time')
+            booking_id = request.query_params.get('id')
+            if booking_id:
+                booking = get_object_or_404(Booking, pk=booking_id)
+                return Response(BookingSerializer(booking).data)
 
-            # DEBUG: Final queryset
-            print(f"🔍 Final queryset count: {queryset.count()}")
-            
-            # DEBUG: Show first few bookings 
-            for booking in queryset[:5]:
-                print(f"🔍 Booking {booking.id}: status='{booking.status}', user={booking.user.username}")
+            queryset = filter_bookings(request.query_params)
 
+            # PDF request
+            if request.query_params.get('pdf', 'false').lower() == 'true':
+                status_filter = request.query_params.get('status', 'All')
+                return generate_bookings_pdf(queryset, status_filter=status_filter)
+
+            # JSON request
             serializer = BookingSerializer(queryset, many=True)
-            
-            # DEBUG: Serialized data
-            print(f"🔍 Serialized data length: {len(serializer.data)}")
-            
             return Response(serializer.data)
-
         except Exception as e:
             print(f"🔥 Error in _get_bookings: {str(e)}")
             import traceback

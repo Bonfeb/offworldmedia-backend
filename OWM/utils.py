@@ -141,15 +141,73 @@ def generate_users_pdf(request):
         }
 
         html_string = render_to_string('users_pdf.html', context)
-        html = HTML(string=html_string, base_url=request.build_absolute_uri())
-        pdf_result = html.write_pdf()
+        html_pdf = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+        
 
         filename = f"Offworld_Media_Users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
-        response = HttpResponse(pdf_result, content_type='application/pdf')
+        response = HttpResponse(html_pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
     except Exception as e:
         print(f"Error generating PDF: {e}")
         return HttpResponse("Error generating PDF", status=500)
+
+def filter_bookings(params):
+    """
+    Applies filtering for bookings based on query parameters.
+    This ensures JSON and PDF downloads return the same filtered results.
+    """
+    queryset = Booking.objects.select_related('user', 'service')
+
+    # Status filter
+    status_filter = params.get('status')
+    if status_filter and status_filter.lower() != 'all':
+        queryset = queryset.filter(status=status_filter.lower())
+
+    # Username filter
+    username = params.get('username')
+    if username:
+        queryset = queryset.filter(user__username__icontains=username)
+
+    # Event location filter
+    event_location = params.get('event_location')
+    if event_location:
+        queryset = queryset.filter(event_location__icontains=event_location)
+
+    # Event date filter (exact match)
+    event_date = params.get('event_date')
+    if event_date:
+        queryset = queryset.filter(event_date=event_date)
+
+    return queryset.order_by('user__username', '-event_date', '-event_time')
+
+def generate_bookings_pdf(queryset, status_filter='All'):
+    """
+    Generate PDF from a queryset of bookings.
+    Returns an HttpResponse with the PDF file.
+    """
+    if not queryset.exists():
+        return HttpResponse("No bookings found", status=404)
+
+    context = {
+        'pdf_bookings': queryset,
+        'total_bookings': queryset.count(),
+        'status_filter': status_filter,
+        'company_name': 'Offworld Media Africa',
+        'company_email': 'offworldmediaafrica@gmail.com',
+        'company_x': 'offworldmedia_africa',
+        'company_facebook': 'Offworld Media Africa',
+        'company_youtube': 'Offworld Media Africa',
+        'generation_date': datetime.now().strftime('%B %d, %Y at %H:%M'),
+    }
+
+    html_string = render_to_string('bookings_pdf.html', context)
+    pdf_content = HTML(string=html_string).write_pdf()
+
+    filename = f"Offworld_Media_Bookings_{status_filter}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response

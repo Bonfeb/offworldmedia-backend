@@ -11,7 +11,7 @@ class CustomUserFilter(django_filters.FilterSet):
 
 class BookingFilter(django_filters.FilterSet):
     username = django_filters.CharFilter(field_name='user__username', lookup_expr='icontains')
-    service = django_filters.CharFilter(field_name='service__name', lookup_expr='icontains')
+    service = django_filters.CharFilter(field_name='service__category', lookup_expr='icontains')
     event_location = django_filters.CharFilter(lookup_expr='icontains')
     status = django_filters.CharFilter(lookup_expr='iexact')
 

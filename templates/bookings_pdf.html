@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ status_filter|title }} Bookings Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            font-size: 14px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .header img {
+            width: 100px;
+            height: auto;
+        }
+        .company-info {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 13px;
+            color: #555;
+        }
+        .report-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 20px 0 15px 0;
+            color: #333;
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background-color: #222;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+        td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img src="{{ STATIC_ROOT }}/images/logo.png" alt="Company Logo">
+    <div class="company-info">
+        <strong>{{ company_name }}</strong><br>
+        Email: {{ company_email }} | X: {{ company_x }}<br>
+        Facebook: {{ company_facebook }} | YouTube: {{ company_youtube }}
+    </div>
+</div>
+
+<div class="report-title">
+    {{ status_filter|title }} Bookings
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>S/No</th>
+            <th>Username</th>
+            <th>Firstname</th>
+            <th>Lastname</th>
+            <th>Service Category</th>
+            <th>Amount</th>
+            <th>Event Date</th>
+            <th>Event Location</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for booking in pdf_bookings %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ booking.user.username }}</td>
+            <td>{{ booking.user.first_name }}</td>
+            <td>{{ booking.user.last_name }}</td>
+            <td>{{ booking.service.category }}</td>
+            <td>{{ booking.amount }}</td>
+            <td>{{ booking.event_date }}</td>
+            <td>{{ booking.event_location }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="footer">
+    Generated on {{ generation_date }}
+</div>
+
+</body>
+</html>
