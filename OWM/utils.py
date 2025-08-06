@@ -204,7 +204,7 @@ def generate_bookings_pdf(queryset, status_filter='All'):
     }
 
     html_string = render_to_string('bookings_pdf.html', context)
-    pdf_content = HTML(string=html_string).write_pdf()
+    pdf_content = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
 
     filename = f"Offworld_Media_Bookings_{status_filter}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     response = HttpResponse(pdf_content, content_type='application/pdf')
