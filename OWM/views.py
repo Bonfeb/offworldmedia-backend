@@ -1430,8 +1430,8 @@ class AdminDashboardView(APIView):
     def _get_users_list(self, request):
         logger = logging.getLogger(__name__)
         """Return list of users or detailed info for a specific user"""
-        print("Received request with params:", self.request.GET)
-        user_id = self.request.query_params.get('user_id')
+        print("Received request with params:", request.GET)
+        user_id = request.query_params.get('user_id')
         logger.info(f"User ID from request: {user_id}")
 
         if request.GET.get('pdf') == 'true':
@@ -1443,13 +1443,13 @@ class AdminDashboardView(APIView):
             except ValueError:
                 return Response({"error": "Invalid user ID"}, status=status.HTTP_400_BAD_REQUEST)
 
-        page = int(self.request.query_params.get('page', 1))
-        page_size = int(self.request.query_params.get('page_size', 10))
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
 
         users = CustomUser.objects.all()
         print("Initial user queryset:", users.query)
 
-        queryset = CustomUserFilter(self.request.GET, queryset=users).qs
+        queryset = CustomUserFilter(request.GET, queryset=users).qs
         print("Filtered user queryset:", queryset.query)
         print("Filtered user count:", queryset.count())
         
