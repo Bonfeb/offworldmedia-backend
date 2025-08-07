@@ -1413,7 +1413,7 @@ class AdminDashboardView(APIView):
             # PDF request
             if request.query_params.get('pdf', 'false').lower() == 'true':
                 status_filter = request.query_params.get('status', 'All')
-                return generate_bookings_pdf(queryset, status_filter=status_filter)
+                return generate_bookings_pdf(request, queryset, status_filter=status_filter)
 
             # JSON request
             serializer = BookingSerializer(queryset, many=True)
