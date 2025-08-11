@@ -89,17 +89,17 @@
     </thead>
     <tbody>
         {% for booking in pdf_bookings %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ booking.user.username | default: "None" }}</td>
-            <td>{{ booking.user.first_name if booking.user else "N/A"}}</td>
-            <td>{{ booking.user.last_name if booking.user else "N/A"}}</td>
-            <td>{{ booking.service.category if booking.service else "None" }}</td>
-            <td>{{ booking.amount }}</td>
-            <td>{{ booking.event_date }}</td>
-            <td>{{ booking.event_location }}</td>
-        </tr>
-        {% endfor %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{% if booking.user %}{{ booking.user.username|default:"N/A" }}{% else %}N/A{% endif %}</td>
+        <td>{% if booking.user %}{{ booking.user.first_name|default:"N/A" }}{% else %}N/A{% endif %}</td>
+        <td>{% if booking.user %}{{ booking.user.last_name|default:"N/A" }}{% else %}N/A{% endif %}</td>
+        <td>{% if booking.service %}{{ booking.service.category|default:"N/A" }}{% else %}N/A{% endif %}</td>
+        <td>{{ booking.amount|default:"0" }}</td>
+        <td>{{ booking.event_date|default:"N/A" }}</td>
+        <td>{{ booking.event_location|default:"N/A" }}</td>
+    </tr>
+    {% endfor %}
     </tbody>
 </table>
 
