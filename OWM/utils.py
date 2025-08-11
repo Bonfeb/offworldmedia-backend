@@ -149,7 +149,7 @@ def generate_users_pdf(request):
         html_pdf = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
         
 
-        filename = f"Offworld_Media_Users_{datetime.datetimenow().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filename = f"Offworld_Media_Users_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
         response = HttpResponse(html_pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
