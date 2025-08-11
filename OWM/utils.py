@@ -149,7 +149,7 @@ def generate_users_pdf(request):
         html_pdf = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
         
 
-        filename = f"Offworld_Media_Users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filename = f"Offworld_Media_Users_{datetime.datetimenow().strftime('%Y%m%d_%H%M%S')}.pdf"
 
         response = HttpResponse(html_pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -215,7 +215,7 @@ def generate_bookings_pdf(request, queryset, status_filter='All'):
     html_string = render_to_string('bookings_pdf.html', context)
     pdf_content = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
 
-    filename = f"Offworld_Media_Bookings_{status_filter}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filename = f"Offworld_Media_Bookings_{status_filter}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     response = HttpResponse(pdf_content, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
