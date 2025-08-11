@@ -1158,7 +1158,7 @@ class AdminDashboardView(APIView):
         if action == 'bookings':
             return self._get_bookings(request)
         elif action == 'users':
-            return self._get_users_list()
+            return self._get_users_list(request)
         elif action == 'services':
             return self._get_services_list(request)
         elif action == 'booking-detail':
