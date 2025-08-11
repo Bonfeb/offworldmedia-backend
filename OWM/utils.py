@@ -141,7 +141,7 @@ def generate_users_pdf(request):
             'company_x': 'offworldmedia_africa',
             'company_facebook': 'Offworld Media Africa',
             'company_youtube': 'Offworld Media Africa',
-            'generation_date': datetime.now().strftime('%B %d, %Y at %H:%M'),
+            'generation_date': datetime.datetime.now().strftime('%B %d, %Y at %H:%M'),
             'logo_url': logo_url,
         }
 
@@ -208,7 +208,7 @@ def generate_bookings_pdf(request, queryset, status_filter='All'):
         'company_x': 'offworldmedia_africa',
         'company_facebook': 'Offworld Media Africa',
         'company_youtube': 'Offworld Media Africa',
-        'generation_date': datetime.now().strftime('%B %d, %Y at %H:%M'),
+        'generation_date': datetime.datetime.now().strftime('%B %d, %Y at %H:%M'),
         'logo_url': logo_url,
     }
 
