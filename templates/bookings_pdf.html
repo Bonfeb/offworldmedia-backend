@@ -91,10 +91,10 @@
         {% for booking in pdf_bookings %}
         <tr>
             <td>{{ forloop.counter }}</td>
-            <td>{{ booking.user.username }}</td>
-            <td>{{ booking.user.first_name }}</td>
-            <td>{{ booking.user.last_name }}</td>
-            <td>{{ booking.service.category }}</td>
+            <td>{{ booking.user.username | default: "None" }}</td>
+            <td>{{ booking.user.first_name if booking.user else "N/A"}}</td>
+            <td>{{ booking.user.last_name if booking.user else "N/A"}}</td>
+            <td>{{ booking.service.category if booking.service else "None" }}</td>
             <td>{{ booking.amount }}</td>
             <td>{{ booking.event_date }}</td>
             <td>{{ booking.event_location }}</td>
