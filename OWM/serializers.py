@@ -210,15 +210,22 @@ class BookingSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
+        instance.status = validated_data.get("status", instance.status)
+
         user_id = validated_data.pop("user_id", None)
         service_id = validated_data.pop("service_id", None)
 
         if user_id:
-            validated_data["user_id"] = user_id
+            instance.user_id = user_id
         if service_id:
-            validated_data["service_id"] = service_id
+            instance.service_id = service_id
 
-        return super().update(instance, validated_data)
+        instance.event_date = validated_data.get("event_date", instance.event_date)
+        instance.event_time = validated_data.get("event_time", instance.event_time)
+        instance.event_location = validated_data.get("event_location", instance.event_location)
+
+        instance.save()
+        return instance
 
     def get_service_image_url(self, obj):
         request = self.context.get('request')

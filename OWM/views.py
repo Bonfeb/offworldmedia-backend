@@ -1213,15 +1213,14 @@ class AdminDashboardView(APIView):
             print(f"[PUT] Found booking: {booking}")
             data = request.data.copy()
 
-            if "user_id" in data:
-                data["user"] = data.pop("user_id")
-            
-            if "service_id" in data:
-                service_id = data.pop("service_id")
+            user_id = data.get("user_id")
+            service_id = data.get("service_id")
 
-            service_id = data.get("service")
-            event_date = parse_date(data.get("event_date"))
-            event_time = parse_time(data.get("event_time"))
+            raw_date = data.get("event_date")
+            raw_time = data.get("event_time")
+
+            event_date = parse_date(raw_date) if raw_date else None
+            event_time = parse_time(raw_time) if raw_time else None
 
             print(f"[PUT] Duplicate check values - service_id={service_id}, event_date={event_date}, event_time={event_time}")
 
