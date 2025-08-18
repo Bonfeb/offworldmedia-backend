@@ -1198,6 +1198,7 @@ class AdminDashboardView(APIView):
 
     def put(self, request, pk):
         """Handle PUT requests - update booking"""
+        logger = logging.getLogger(__name__)
         if not request.user.is_staff:
             return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
         
@@ -1206,7 +1207,10 @@ class AdminDashboardView(APIView):
         user_update = 'username' in request.data or 'email' in request.data or 'first_name' in request.data
 
         if booking_update:
+            logger.debug(f"[PUT] Booking Update request data: {request.data}")
+
             booking = get_object_or_404(Booking, pk=pk)
+            logger.debug(f"[PUT] Found booking: {booking}")
             data = request.data.copy()
 
             if "user_id" in data:
@@ -1219,11 +1223,14 @@ class AdminDashboardView(APIView):
             event_date = parse_date(data.get("event_date"))
             event_time = parse_time(data.get("event_time"))
 
+            logger.debug(f"[PUT] Duplicate check values - service_id={service_id}, event_date={event_date}, event_time={event_time}")
+
             if service_id and event_date and event_time:
                 existing_booking = Booking.objects.filter(
                     service_id=service_id, event_date=event_date, event_time=event_time
                 ).exclude(pk=pk).exists()
 
+                logger.debug(f"[PUT] Existing booking conflict: {existing_booking}")
                 if existing_booking:
                     return Response({"error": "Service already booked on this date."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1234,11 +1241,14 @@ class AdminDashboardView(APIView):
                 context={'request': request}
             )
             if serializer.is_valid():
+                logger.debug(f"[PUT] Serializer valid. Validated data: {serializer.validated_data}")
                 updated_booking = serializer.save()
+                logger.debug(f"[PUT] Booking updated successfully: {updated_booking}")
                 return Response(
                     BookingSerializer(updated_booking, context={'request': request}).data,
                 status=status.HTTP_200_OK
                     )
+            logger.error(f"[PUT] Serializer errors: {serializer.errors}")
             return Response(
                 {"error": "Booking Update Failed", "details": serializer.errors}, 
                 status=status.HTTP_400_BAD_REQUEST)
