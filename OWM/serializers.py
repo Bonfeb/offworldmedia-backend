@@ -209,6 +209,17 @@ class BookingSerializer(serializers.ModelSerializer):
         validated_data['status'] = 'unpaid'
         return super().create(validated_data)
 
+    def update(self, instance, validated_data):
+        user_id = validated_data.pop("user_id", None)
+        service_id = validated_data.pop("service_id", None)
+
+        if user_id:
+            validated_data["user_id"] = user_id
+        if service_id:
+            validated_data["service_id"] = service_id
+
+        return super().update(instance, validated_data)
+
     def get_service_image_url(self, obj):
         request = self.context.get('request')
         if obj.service and hasattr(obj.service, 'image') and obj.service.image:
@@ -259,7 +270,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Returns full service details"""
         return {
             "id": obj.service.id,
-            "name": obj.service.name,
+            "category": obj.service.category
         }
 
     def create(self, validated_data):
