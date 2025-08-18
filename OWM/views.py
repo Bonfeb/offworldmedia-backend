@@ -1208,32 +1208,32 @@ class AdminDashboardView(APIView):
         if booking_update:
             booking = get_object_or_404(Booking, pk=pk)
             data = request.data.copy()
-            data["user"] = request.user.id  # Ensure the correct user is set
 
-            service_id = data.get("service_id")
+            if "user_id" in data:
+                data["user"] = data.pop("user_id")
+            
+            if "service_id" in data:
+                service_id = data.pop("service_id")
+
+            service_id = data.get("service")
             event_date = parse_date(data.get("event_date"))
             event_time = parse_time(data.get("event_time"))
 
-            existing_booking = Booking.objects.filter(
-                service_id=service_id, event_date=event_date, event_time=event_time
-            ).exclude(pk=pk).exists()
+            if service_id and event_date and event_time:
+                existing_booking = Booking.objects.filter(
+                    service_id=service_id, event_date=event_date, event_time=event_time
+                ).exclude(pk=pk).exists()
 
-            if existing_booking:
-                return Response(
-                    {"error": "Service already booked on this date."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                if existing_booking:
+                    return Response({"error": "Service already booked on this date."}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = BookingSerializer(
                 booking, 
-                data=request.data, 
+                data=data, 
                 partial=True, 
                 context={'request': request}
             )
             if serializer.is_valid():
-                if 'user_id' not in request.data:
-                    serializer.validated_data['user'] = booking.user
-
                 updated_booking = serializer.save()
                 return Response(
                     BookingSerializer(updated_booking, context={'request': request}).data,
