@@ -210,10 +210,10 @@ class BookingSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        instance.status = validated_data.get("status", instance.status)
-
         user_id = validated_data.pop("user_id", None)
         service_id = validated_data.pop("service_id", None)
+
+        instance = super().update(instance, validated_data)
 
         if user_id:
             instance.user_id = user_id
