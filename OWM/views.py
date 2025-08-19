@@ -1199,29 +1199,40 @@ class AdminDashboardView(APIView):
     def put(self, request, pk):
         """Handle PUT requests - update booking"""
         logger = logging.getLogger(__name__)
-        if not request.user.is_staff:
-            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
-        
-        booking_update = 'service' in request.data or 'event_date' in request.data or 'event_time' in request.data
 
+        logger.info("[PUT] Incoming booking update request", extra={"user": request.user.id, "pk": pk})
+        print(f"[PUT] Incoming booking update request: user={request.user}, pk={pk}")
+
+        if not request.user.is_staff:
+            logger.warning(f"[PUT] Forbidden access by user={request.user.id}")
+            print(f"[PUT] Forbidden access by user={request.user.id}")
+            return Response({"error": "Forbidden: Admins only"}, status=status.HTTP_403_FORBIDDEN)
+
+        booking_update = 'service' in request.data or 'event_date' in request.data or 'event_time' in request.data
         user_update = 'username' in request.data or 'email' in request.data or 'first_name' in request.data
 
+        logger.debug(f"[PUT] booking_update={booking_update}, user_update={user_update}")
+        print(f"[PUT] booking_update={booking_update}, user_update={user_update}")
+
         if booking_update:
+            logger.info(f"[PUT] Booking update payload received: {request.data}")
             print(f"[PUT] Booking Update request data: {request.data}")
 
             booking = get_object_or_404(Booking, pk=pk)
+            logger.debug(f"[PUT] Found booking: {booking}")
             print(f"[PUT] Found booking: {booking}")
+
             data = request.data.copy()
 
             user_id = data.get("user_id")
             service_id = data.get("service_id")
-
             raw_date = data.get("event_date")
             raw_time = data.get("event_time")
 
             event_date = parse_date(raw_date) if raw_date else None
             event_time = parse_time(raw_time) if raw_time else None
 
+            logger.debug(f"[PUT] Duplicate check values - service_id={service_id}, event_date={event_date}, event_time={event_time}")
             print(f"[PUT] Duplicate check values - service_id={service_id}, event_date={event_date}, event_time={event_time}")
 
             if service_id and event_date and event_time:
@@ -1229,8 +1240,11 @@ class AdminDashboardView(APIView):
                     service_id=service_id, event_date=event_date, event_time=event_time
                 ).exclude(pk=pk).exists()
 
+                logger.info(f"[PUT] Existing booking conflict check: {existing_booking}")
                 print(f"[PUT] Existing booking conflict: {existing_booking}")
+
                 if existing_booking:
+                    logger.warning(f"[PUT] Conflict: booking already exists for service_id={service_id}, event_date={event_date}, event_time={event_time}")
                     return Response({"error": "Service already booked on this date."}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = BookingSerializer(
@@ -1239,18 +1253,28 @@ class AdminDashboardView(APIView):
                 partial=True, 
                 context={'request': request}
             )
+
             if serializer.is_valid():
+                logger.info(f"[PUT] Serializer valid for booking_id={pk}")
                 print(f"[PUT] Serializer valid. Validated data: {serializer.validated_data}")
+
                 updated_booking = serializer.save()
-                logger.debug(f"[PUT] Booking updated successfully: {updated_booking}")
+
+                logger.info(f"[PUT] Booking updated successfully: id={updated_booking.id}, status={updated_booking.status}")
+                print(f"[PUT] Booking updated successfully: {updated_booking}")
+
                 return Response(
                     BookingSerializer(updated_booking, context={'request': request}).data,
-                status=status.HTTP_200_OK
-                    )
+                    status=status.HTTP_200_OK
+                )
+
+            logger.error(f"[PUT] Serializer errors: {serializer.errors}")
             print(f"[PUT] Serializer errors: {serializer.errors}")
+
             return Response(
                 {"error": "Booking Update Failed", "details": serializer.errors}, 
-                status=status.HTTP_400_BAD_REQUEST)
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         elif user_update:
             user = get_object_or_404(CustomUser, pk=pk)
