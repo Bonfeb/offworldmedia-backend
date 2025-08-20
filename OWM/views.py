@@ -1252,15 +1252,21 @@ class AdminDashboardView(APIView):
             logger.debug(f"[PUT] Serializer valid for booking_id={pk}")
             print(f"[PUT] Serializer valid. Validated data: {serializer.validated_data}")
 
-            updated_booking = serializer.save()
+            try:
+                updated_booking = serializer.save()  # calls improved update()
 
-            logger.debug(f"[PUT] Booking updated successfully: id={updated_booking.id}, status={updated_booking.status}")
-            print(f"[PUT] Booking updated successfully: {updated_booking}")
+                logger.info(f"[PUT] Booking updated successfully: id={updated_booking.id}, status={updated_booking.status}")
+                return Response(
+                    BookingSerializer(updated_booking, context={'request': request}).data,
+                    status=status.HTTP_200_OK
+                )
 
-            return Response(
-                BookingSerializer(updated_booking, context={'request': request}).data,
-                status=status.HTTP_200_OK
-            )
+            except Exception as e:
+                logger.error(f"[PUT] Error saving booking: {str(e)}", exc_info=True)
+                return Response(
+                    {"error": "Failed to update booking", "details": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
         logger.debug(f"[PUT] Serializer errors: {serializer.errors}")
         print(f"[PUT] Serializer errors: {serializer.errors}")

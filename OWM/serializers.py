@@ -220,11 +220,10 @@ class BookingSerializer(serializers.ModelSerializer):
         if service_id:
             instance.service_id = service_id
 
-        instance.event_date = validated_data.get("event_date", instance.event_date)
-        instance.event_time = validated_data.get("event_time", instance.event_time)
-        instance.event_location = validated_data.get("event_location", instance.event_location)
-
         instance.save()
+
+        instance.refresh_from_db()  # Refresh instance to get updated fields
+        
         return instance
 
     def get_service_image_url(self, obj):
