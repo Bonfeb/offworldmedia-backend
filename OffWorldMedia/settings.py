@@ -254,12 +254,6 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'owm_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'owm.log',
-            'formatter': 'verbose',
-        },
     },
     'root': {
         'handlers': ['console'],
@@ -269,11 +263,6 @@ LOGGING = {
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
-            'propagate': False,
-        },
-        'OffWorldMedia': {
-            'handlers': ['owm_file', 'console'],
-            'level': 'DEBUG',
             'propagate': False,
         },
     },
