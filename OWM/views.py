@@ -1225,6 +1225,7 @@ class AdminDashboardView(APIView):
 
         event_date = parse_date(raw_date) if raw_date else None
         event_time = parse_time(raw_time) if raw_time else None
+        logger.debug(f"[PUT] Parsed event_date: {event_date}, event_time: {event_time}")
 
         logger.debug(f"[PUT] Duplicate check values - service_id={service_id}, event_date={event_date}, event_time={event_time}")
         print(f"[PUT] Duplicate check values - service_id={service_id}, event_date={event_date}, event_time={event_time}")
