@@ -236,7 +236,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class CartSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    service_name = serializers.CharField(source="service.name", read_only=True)
+    service_category = serializers.CharField(source="service.category", read_only=True)
     service_id = serializers.IntegerField(source="service.id", read_only=True)
     service_price = serializers.DecimalField(source="service.price", max_digits=10, decimal_places=2, read_only=True)
     service_image = serializers.ImageField(source="service.image", read_only=True)
@@ -247,7 +247,7 @@ class CartSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Cart
-        fields = ["id", "user", "service", "service_id", "service_name", "service_price", "service_image", "added_at", "event_date", "event_location", "event_time"]
+        fields = ["id", "user", "service", "service_id", "service_category", "service_price", "service_image", "added_at", "event_date", "event_location", "event_time"]
 
 class ContactUsSerializer(serializers.ModelSerializer):
     class Meta:

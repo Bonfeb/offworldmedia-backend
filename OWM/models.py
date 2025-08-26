@@ -76,7 +76,7 @@ class Booking(models.Model):
         verbose_name_plural = "Bookings"
 
     def __str__(self):
-        return f"{self.user.username} - {self.service.name} ({self.event_date} {self.event_time})"
+        return f"{self.user.username} - {self.service.category} ({self.event_date} {self.event_time})"
 
 class MpesaTransaction(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='transactions')
