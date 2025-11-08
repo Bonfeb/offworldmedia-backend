@@ -23,22 +23,6 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = [
-    config("BASE_URL"),
-    "offworldmedia-backend.onrender.com"
-    ]
-
-CORS_ALLOWED_ORIGINS = [
-    #config("CORS_ORIGIN_1"), # For local development
-    config("RENDER_FRONTEND_URL"),
-    "http://localhost:5173",
-    config("FRONTEND_URL"),
-    config("BACKEND_NAMESPACE"),
-    #config("NETLIFY_FRONTEND_URL")
-]
-
-FRONTEND_URL = config("RENDER_FRONTEND_URL")
-
 AUTH_USER_MODEL = 'OWM.CustomUser'
 
 # Application definitiona
@@ -105,15 +89,31 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SAMESITE": None,
 }
 
+ALLOWED_HOSTS = [
+    config("BASE_URL_RENDER"),
+    config("BASE_URL_NAMESPACE"),
+    "localhost",
+    "127.0.0.1",
+    ]
+
 CORS_ALLOWOED_ORIGINS = [
     "http://localhost:5173",
-    "https://offworldmedia.org",
-    "https://api.offworldmedia.org",
+    config("RENDER_FRONTEND_URL"),
+    config("NETLIFY_FRONTEND_URL"),
+    config("FRONTEND_URL"),
+    config("WWW_FRONTEND_URL"),
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    config("RENDER_FRONTEND_URL"),
+    config("NETLIFY_FRONTEND_URL"),
+    config("FRONTEND_URL"),
+    config("WWW_FRONTEND_URL"),
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", config("RENDER_FRONTEND_URL")]
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = None
 
