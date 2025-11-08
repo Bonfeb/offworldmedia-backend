@@ -13,6 +13,10 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name="change-password"),
     #path('token/refresh/', CookieTokenRefreshView.as_view, name='token_refresh'),
 
+    #Google, Facebook Auth endpoints
+    path('google-auth/', GoogleAuthView.as_view(), name='google-auth'),
+    path('facebook-auth/', FacebookAuthView.as_view(), name='facebook-auth'),
+
     #Profile Endpoint
     path('profile/', UserProfileView.as_view(), name='profile'),
     path('profile/edit/', UserProfileView.as_view(), name="edit-profile"),

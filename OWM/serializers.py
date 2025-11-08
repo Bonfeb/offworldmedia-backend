@@ -5,54 +5,44 @@ from .models import *
 import logging
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.ImageField(required=False)  # Make profile_pic optional
+    profile_pic = serializers.ImageField(required=False)
+    password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'username', 'email', 'phone', 'profile_pic', 'password', 'address']
-        extra_kwargs = {'password': {'write_only': True, 'required': False}}  # Make password optional
+        fields = ['id', 'username', 'email', 'password', 'phone', 'profile_pic']
+        extra_kwargs = {
+            "phone": {"required": False},
+            "profile_pic": {"required": False},
+        }
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get("request")
-        if request and data.get("profile_pic"):
-            data["profile_pic"] = request.build_absolute_uri(data["profile_pic"])
-        data.pop("password", None)
-        return data
-
+    # ✅ Ensure unique email
     def validate_email(self, value):
-        """Ensure email is unique if changed"""
-        user = self.instance
-        if user and CustomUser.objects.exclude(id=user.id).filter(email=value).exists():
+        if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
 
+    # ✅ Ensure unique username
     def validate_username(self, value):
-        """Ensure username is unique if changed"""
-        user = self.instance
-        if user and CustomUser.objects.exclude(id=user.id).filter(username=value).exists():
+        if CustomUser.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
-    
+
     def create(self, validated_data):
-        # Remove password from validated_data to set it manually
-        password = validated_data.pop("password", None)
+        password = validated_data.pop("password")
         user = CustomUser(**validated_data)
-        if password:
-            user.set_password(password)
+        user.set_password(password)
         user.save()
         return user
 
     def update(self, instance, validated_data):
-        """Handle profile updates, including optional image uploads"""
-        profile_pic = validated_data.pop("profile_pic", None)
         password = validated_data.pop("password", None)
-
-        if profile_pic:
-            instance.profile_pic = profile_pic  # Update profile picture
+        profile_pic = validated_data.pop("profile_pic", None)
 
         if password:
-            instance.set_password(password)  # Use `set_password()` instead of `make_password()`
+            instance.set_password(password)
+        if profile_pic:
+            instance.profile_pic = profile_pic
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -60,20 +50,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    # ✅ Return full image URL
     def to_representation(self, instance):
-        """Modify response to return full URL for profile_pic"""
-       
-        representation = super().to_representation(instance)
-        request = self.context.get("request")  # Get request context for full URL
-        if hasattr(instance, "profile_pic") and instance.profile_pic:
-            profile_pic_url = instance.profile_pic.url
-            if profile_pic_url.startswith("http://"):
-                profile_pic_url = profile_pic_url.replace("http://", "https://")
+        rep = super().to_representation(instance)
+        request = self.context.get('request')
+
+        if instance.profile_pic:
+            url = instance.profile_pic.url
             if request:
-                profile_pic_url = request.build_absolute_uri(profile_pic_url)
-            representation["profile_pic"] = profile_pic_url
-        return representation
-    
+                url = request.build_absolute_uri(url)
+            rep["profile_pic"] = url
+        
+        return rep
+ 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)

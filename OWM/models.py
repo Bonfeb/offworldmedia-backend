@@ -4,12 +4,10 @@ from django.db import models
 
 # Custom User Model
 class CustomUser(AbstractUser):
-    first_name = models.CharField(max_length=20, null=False, blank=False)
-    last_name = models.CharField(max_length=20, null=False, blank=False)
     username = models.CharField(max_length=20, unique=True, null=False, blank=False)
+    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
     profile_pic = CloudinaryField('profile_pic', blank=True, null=True)
-    address = models.CharField(max_length=30, blank=False, null=False)
 
     class Meta:
         verbose_name = "CustomerUser"

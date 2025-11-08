@@ -9,8 +9,6 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Count, Case, When, Value, IntegerField
 from rest_framework import status
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -23,7 +21,6 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import InvalidToken
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 from django_daraja.mpesa.core import MpesaClient
@@ -41,6 +38,8 @@ from .filters import *
 from .utils import *
 from .signals import booking_successful
 
+CustomUser = get_user_model()
+
 # User Registration View
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -53,43 +52,59 @@ class RegisterView(APIView):
             print(f"Request content type: {request.content_type}")
             print(f"Request data: {request.data}")
             
-            if serializer.is_valid():
-                user = serializer.save()
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-                customer_group, created = Group.objects.get_or_create(name="customer")
-                user.groups.add(customer_group)
+            user = serializer.save()
 
-                refresh = RefreshToken.for_user(user)
-                mpesa_token = str(refresh.access_token)
+            # ✅ Assign default "customer" group
+            customer_group, _ = Group.objects.get_or_create(name="customer")
+            user.groups.add(customer_group)
 
-                response = Response({"message": "Registration successful"}, status=status.HTTP_201_CREATED)
-                response.set_cookie(
-                    key="refresh_token",
-                    value=str(refresh),
-                    httponly=True,
-                    secure=True,  # Set to True in production with HTTPS
-                    samesite="Lax",
-                    path="/api/token/refresh/"
-                )
-                response.set_cookie(
-                    key="access_token",
-                    value=access_token,
-                    httponly=True,
-                    secure=True,
-                    samesite="Lax",
-                    path="/"
-                )
-                return response
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # ✅ Use SimpleJWT serializer to generate tokens & user metadata
+            token_serializer = CustomTokenObtainPairSerializer(
+                data={"username": user.username, "password": request.data.get("password")},
+                context={"request": request},
+            )
+
+            if not token_serializer.is_valid():
+                return Response(token_serializer.errors, status=400)
+
+            token_data = token_serializer.validated_data
+
+            # ✅ Response payload
+            response = Response({
+                "message": "Registration successful",
+                "access_token": token_data["access"],
+                "refresh_token": token_data["refresh"],
+                "username": token_data["username"],
+                "profile_pic": token_data["profile_pic"],
+                "groups": token_data["groups"],
+            }, status=status.HTTP_201_CREATED)
+
+            # ✅ Set refresh token as HttpOnly cookie
+            response.set_cookie(
+                key="refresh_token",
+                value=token_data["refresh"],
+                httponly=True,
+                secure=True,  # enable HTTPS in production
+                samesite="None",
+                path="/",
+                max_age=7 * 24 * 60 * 60,
+            )
+
+            return response
 
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({"detail": str(e)}, status=400)
+
         except Exception as e:
-            # You can log the full traceback for debugging
             import traceback
             traceback.print_exc()
-            return Response({"error": "Something went wrong", "detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "Something went wrong", "detail": str(e)}, 
+                status=500
+            )
 
 # Login View (JWT Token Generation)
 class LoginView(APIView):
@@ -98,34 +113,127 @@ class LoginView(APIView):
     def post(self, request):
         serializer = CustomTokenObtainPairSerializer(data=request.data, context={"request": request})
 
-        if serializer.is_valid():
-            user = serializer.user
-            data = serializer.validated_data
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
 
-            response = JsonResponse({
-                "message": "Login successful",
-                "access_token": access_token,  # ✅ Send access token in response
-                "username": data.get("username"),
-                "profile_pic": data.get("profile_pic"),
-                "groups": data.get("groups") 
-            })
+        data = serializer.validated_data
 
-            # Store only refresh token in HTTP-only cookie
-            response.set_cookie(
-                key="refresh_token",
-                value=str(refresh),
-                httponly=True,
-                secure=True,  # 🔒 Use True in production
-                samesite=None,  # 🔒 Better CSRF protection
-                path="/token/refresh/"  # 🔄 Only send with refresh endpoint
-            )
+        response = Response({
+            "access_token": data["access"],
+            "refresh_token": data["refresh"],
+            "username": data["username"],
+            "profile_pic": data["profile_pic"],
+            "groups": data["groups"],
+        })
 
-            return response
-        
-        return Response({"error": "Invalid credentials"}, status=401)
-        
+        # ✅ Set refresh token in HttpOnly cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=data["refresh"],
+            httponly=True,
+            secure=True,
+            samesite="None",
+            max_age=7 * 24 * 60 * 60,
+        )
+
+        return response
+
+#Google OAuth View (User can sign-up/in using google account)
+class GoogleAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        id_token = request.data.get("id_token")
+        if not id_token:
+            return Response({"error": "Missing Google ID token"}, status=400)
+
+        # Verify token with Google
+        google_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+        google_response = requests.get(google_url)
+        google_data = google_response.json()
+
+        if "error_description" in google_data:
+            return Response({"error": "Invalid Google token"}, status=400)
+
+        google_email = google_data.get("email")
+        google_name = google_data.get("name")
+        google_pic = google_data.get("picture")
+
+        if not google_email:
+            return Response({"error": "Google account missing email"}, status=400)
+
+        # Create or get user
+        user, created = CustomUser.objects.get_or_create(
+            email=google_email,
+            defaults={
+                "username": f"google_{google_data['sub']}",
+                "first_name": google_name.split(" ")[0],
+                "last_name": " ".join(google_name.split(" ")[1:]),
+            },
+        )
+
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        return Response({
+            "message": "Google login successful",
+            "access_token": access,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "profile_pic": google_pic,
+            }
+        }, status=200)
+
+#Facebook Auth View (User can sign-up/in using facebook account)
+class FacebookAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        access_token = request.data.get("access_token")
+        if not access_token:
+            return Response({"error": "Missing Facebook access token"}, status=400)
+
+        # Verify with Facebook Graph API
+        fb_url = f"https://graph.facebook.com/me?fields=id,name,email,picture&access_token={access_token}"
+        fb_response = requests.get(fb_url)
+        fb_data = fb_response.json()
+
+        if "error" in fb_data:
+            return Response({"error": "Invalid Facebook token"}, status=400)
+
+        fb_email = fb_data.get("email")
+        fb_name = fb_data.get("name")
+        fb_pic = fb_data.get("picture", {}).get("data", {}).get("url")
+
+        if not fb_email:
+            return Response({"error": "Facebook account has no email."}, status=400)
+
+        # Create or get user
+        user, created = CustomUser.objects.get_or_create(
+            email=fb_email,
+            defaults={
+                "username": f"fb_{fb_data['id']}",
+                "first_name": fb_name.split(" ")[0],
+                "last_name": " ".join(fb_name.split(" ")[1:]),
+            },
+        )
+
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        return Response({
+            "message": "Facebook login successful",
+            "access_token": access,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "profile_pic": fb_pic,
+            }
+        }, status=200)
+
 #Logout View
 class LogoutView(APIView):
     def post(self, request):
