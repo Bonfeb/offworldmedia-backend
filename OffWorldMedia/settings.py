@@ -25,6 +25,7 @@ if not DEBUG:
 
 ALLOWED_HOSTS = [
     config("BASE_URL"),
+    "offworldmedia-backend.onrender.com"
     ]
 
 CORS_ALLOWED_ORIGINS = [
