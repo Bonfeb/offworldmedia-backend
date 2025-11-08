@@ -101,7 +101,11 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SAMESITE": None,
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWOED_ORIGINS = [
+    "http://localhost:5173",
+    "https://offworldmedia.org",
+    "https://api.offworldmedia.org",
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
