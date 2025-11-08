@@ -31,6 +31,9 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     #config("CORS_ORIGIN_1"), # For local development
     config("RENDER_FRONTEND_URL"),
+    "http://localhost:5173",
+    config("FRONTEND_URL"),
+    config("BACKEND_NAMESPACE"),
     #config("NETLIFY_FRONTEND_URL")
 ]
 
