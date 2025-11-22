@@ -279,7 +279,7 @@ class TeamMemberSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField()
     class Meta:
         model = TeamMember
-        fields = ['id', 'name', 'role', 'profile_pic', 'bio']
+        fields = ['id', 'name', 'role', 'profile_pic', 'bio', 'facebook_link', 'twitter_link', 'instagram_link']
 
     def validate_profile_pic(self, value):
         valid_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']

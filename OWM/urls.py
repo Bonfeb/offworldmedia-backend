@@ -42,7 +42,7 @@ urlpatterns = [
     path('team/<int:pk>/', TeamView.as_view(), name='team-member'),
 
     # Review Endpoints
-    path('reviews/', ReviewView.as_view(), name='review-list'),
+     
     path('review/<int:pk>', ReviewView.as_view(), name='review'),
 
     #Contact Endpoints

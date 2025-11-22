@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
@@ -94,6 +94,7 @@ ALLOWED_HOSTS = [
     config("BASE_URL_NAMESPACE"),
     "localhost",
     "127.0.0.1",
+    "192.168.100.4"
     ]
 
 CORS_ALLOWED_ORIGINS = [

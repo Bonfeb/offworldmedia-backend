@@ -487,31 +487,49 @@ class BookingView(APIView):
         if not user.is_authenticated:
             return Response({"error": "You must be logged in to book a service."}, status=status.HTTP_401_UNAUTHORIZED)
         
-        service_id = pk # pk is provided in the URL, meaning we're booking this service
-        logger.info(f"Service ID from URL: {service_id}")
+        service_id = request.data.get('service_id')
+        event_date = request.data.get('event_date')
+        event_time = request.data.get('event_time')
+        event_location = request.data.get('event_location')
+        customer_name = request.data.get('customer_name')
+        customer_phone = request.data.get('customer_phone')
+        customer_address = request.data.get('customer_address')
+        notes = request.data.get('notes', '')
+
+        logger.info(f"Service ID from request: {service_id}")
         logger.info(f"User: {user}")
+
         if not service_id:
             return Response({"error": "Service ID is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        cart_item = Cart.objects.select_related('service').filter(
-            user=user, 
-            service_id=service_id
-        ).first()
-
-        if not cart_item:
-            return Response({"error": "Service not found in cart"}, status=status.HTTP_404_NOT_FOUND)
+        # Validate required fields
+        if not event_date or not event_time:
+            return Response({"error": "Event date and time are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get service object
+        try:
+            service = Service.objects.get(id=service_id)
+        except Service.DoesNotExist:
+            return Response({"error": "Service not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # For audio services, don't require location
+        if service.category == 'audio':
+            event_location = None  # Audio services are studio-based
+        elif not event_location:
+            return Response({"error": "Event location is required for this service."}, status=status.HTTP_400_BAD_REQUEST)
         
         while Booking.objects.filter(invoice_number=invoice_number).exists():
             invoice_number = generate_invoice_number
 
         booking_data = {
             "user": user.id,
-            "service_id": service_id,
-            "event_date": cart_item.event_date,
-            "event_time": cart_item.event_time,
-            "event_location": cart_item.event_location,
+            "service": service_id,
+            "event_date": event_date,
+            "event_time": event_time,
+            "event_location": event_location,
             "invoice_number": invoice_number,
-            "status": "unpaid"  # Default status for new bookings
+            "status": "unpaid",  # Default status for new bookings
+            "customer_notes": notes
         }
         logger.info(f"Booking data: {booking_data}")
         serializer = BookingSerializer(data=booking_data, context={"request": request})
@@ -520,16 +538,26 @@ class BookingView(APIView):
             print("Serializer errors:", serializer.errors)
             return Response({"error": "Validation Failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
-        if Booking.objects.filter(
-            service_id=service_id,
-            event_date=booking_data['event_date'],
-            event_time=booking_data['event_time']
-        ).exists():
+        # Check for booking conflicts (only for non-audio services with location)
+        conflict_filter = {
+            "service_id": service_id,
+            "event_date": booking_data['event_date'],
+            "event_time": booking_data['event_time']
+        }
+        
+        # Only add location to conflict check for non-audio services
+        if service.category != 'audio' and event_location:
+            conflict_filter['event_location'] = event_location
+        
+        if Booking.objects.filter(**conflict_filter).exists():
+            error_msg = "Service already booked on this date and time."
+            if service.category != 'audio':
+                error_msg += " at this location."
             return Response(
-                {"error": "Service already booked on this date and time."},
+                {"error": error_msg},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             booking = serializer.save()
             booking_successful.send(sender=Booking, booking=booking)
@@ -539,8 +567,6 @@ class BookingView(APIView):
         except Exception as e:
             logger.error(f"Error creating booking: {str(e)}")
             return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        cart_item.delete()
 
         # Get all admin/staff emails
         admin_emails = list(CustomUser.objects.filter(
@@ -636,9 +662,6 @@ class BookingView(APIView):
             return Response({"message": "Booking deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": "Error deleting booking", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         user = request.user
@@ -899,11 +922,19 @@ class UserDashboardView(APIView):
         user_data = CustomUserSerializer(user).data
 
         # Categorize bookings *user
-        bookings = Booking.objects.filter(user=user)
+        bookings = Booking.objects.filter(user=user).all()
         unpaid = bookings.filter(status="unpaid")
         paid = bookings.filter(status="paid")
         completed = bookings.filter(status="completed")
         cancelled = bookings.filter(status="cancelled")
+
+        #Categorize reviews *user
+        reviews = Review.objects.filter(user=user).all()
+        total_reviews = reviews.count()
+
+        #Categorize messages *user
+        messages = ContactUs.objects.filter(user=user).all()
+        total_messages = messages.count()
 
         return Response({
             "user": user_data,
@@ -913,7 +944,11 @@ class UserDashboardView(APIView):
                 "completed": BookingSerializer(completed, many=True, context=context).data,
                 "cancelled": BookingSerializer(cancelled, many=True, context=context).data
             },
-            "cart": cart_data  
+            "cart": cart_data,
+            "reviews": reviews,
+            "messages": messages,
+            "total_reviews": total_reviews,
+            "total_messages": total_messages,
         })
     
     def delete(self, request, pk):
