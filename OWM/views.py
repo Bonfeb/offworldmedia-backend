@@ -913,11 +913,6 @@ class UserDashboardView(APIView):
         user = request.user
         context = {'request': request}
 
-        # Fetch user cart items
-        cart_items = Cart.objects.filter(user=user).all()
-        cart_data = CartSerializer(cart_items, many=True, context=context).data  
-
-        print("serialized cart data:", cart_data)
         # Serialize user profile
         user_data = CustomUserSerializer(user).data
 
@@ -930,10 +925,12 @@ class UserDashboardView(APIView):
 
         #Categorize reviews *user
         reviews = Review.objects.filter(user=user).all()
+        reviews_data = ReviewSerializer(reviews, many=True).data
         total_reviews = reviews.count()
 
         #Categorize messages *user
         messages = ContactUs.objects.filter(user=user).all()
+        messages_data = ContactUsSerializer(messages, many=True).data
         total_messages = messages.count()
 
         return Response({
@@ -944,9 +941,8 @@ class UserDashboardView(APIView):
                 "completed": BookingSerializer(completed, many=True, context=context).data,
                 "cancelled": BookingSerializer(cancelled, many=True, context=context).data
             },
-            "cart": cart_data,
-            "reviews": reviews,
-            "messages": messages,
+            "reviews": reviews_data,
+            "messages": messages_data,
             "total_reviews": total_reviews,
             "total_messages": total_messages,
         })
@@ -1158,7 +1154,7 @@ class VideoView(APIView):
 
 # Review API
 class ReviewView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         reviews = Review.objects.select_related("service", "user").all()
@@ -1194,8 +1190,6 @@ class ReviewView(APIView):
             return Response("Please Login to update Review", status=status.HTTp_400_BAD_REQUEST)
         
         review = get_object_or_404(Review, pk=pk)
-        if review.user != user and not user.is_staff:
-            return Response("You do not have permission to update this review", status=status.HTTP_403_FORBIDDEN)
         
         serializer = ReviewSerializer(review, data=request.data, partial=True)
 
