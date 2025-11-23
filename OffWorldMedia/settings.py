@@ -99,7 +99,6 @@ ALLOWED_HOSTS = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    config("RENDER_FRONTEND_URL"),
     config("NETLIFY_FRONTEND_URL"),
     config("FRONTEND_URL"),
     config("WWW_FRONTEND_URL"),
@@ -107,7 +106,6 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
-    config("RENDER_FRONTEND_URL"),
     config("NETLIFY_FRONTEND_URL"),
     config("FRONTEND_URL"),
     config("WWW_FRONTEND_URL"),
