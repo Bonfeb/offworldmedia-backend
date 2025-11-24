@@ -1,0 +1,27 @@
+[
+    [
+  {
+    "id": 1,
+    "title": "Buy 1 Get 1 Free",
+    "type": "promotion",
+    "description": "Special promo for loyal customers. Get one free item with every purchase.",
+    "startDate": "2025-02-01",
+    "endDate": "2025-02-10"
+  },
+  {
+    "id": 2,
+    "title": "New Song Release",
+    "type": "release",
+    "description": "Check out the latest single dropping on all platforms.",
+    "date": "2025-01-27"
+  },
+  {
+    "id": 3,
+    "title": "Annual Fan Event",
+    "type": "event",
+    "description": "Meet-and-greet event happening in the main city arena.",
+    "date": "2025-03-15"
+  }
+]
+
+]

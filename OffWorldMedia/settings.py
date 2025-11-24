@@ -8,6 +8,8 @@ import cloudinary
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+DATA_DIR = os.path.join(BASE_DIR, "data")
+ANNOUNCEMENTS_FILE = os.path.join(DATA_DIR, "announcements.json")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -91,7 +93,7 @@ SIMPLE_JWT = {
 
 ALLOWED_HOSTS = [
     config("BASE_URL_RENDER"),
-    config("BASE_URL_NAMESPACE"),
+    config("BASE_URL_NAMECHEAP"),
     "localhost",
     "127.0.0.1",
     "192.168.100.4"

@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import *
+from .announcements_views import *
 
 urlpatterns = [
     # Auth Endpoints
@@ -53,6 +54,11 @@ urlpatterns = [
     path('image/<int:pk>/', ImageView.as_view(), name='image'),
     path('videos/', VideoView.as_view(), name='video'),
     path('video/<int:pk>/', VideoView.as_view(), name='video'),
+
+    #Announcements
+    path("announcements/", get_announcements),
+    path("announcements/update/", update_announcements),
+    path('announcements/delete/<int:announcement_id>/', delete_announcement),
 
     #Admin Dashboard paths
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
