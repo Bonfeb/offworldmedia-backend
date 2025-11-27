@@ -144,6 +144,7 @@ class TeamMember(models.Model):
     facebook_link = models.CharField(max_length=255, blank=True, null=True)
     twitter_link = models.CharField(max_length=255, blank=True, null=True)
     instagram_link = models.CharField(max_length=255, blank=True, null=True)
+    tiktok_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name = "TeamMember"
