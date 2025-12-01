@@ -56,11 +56,9 @@ urlpatterns = [
     path('video/<int:pk>/', VideoView.as_view(), name='video'),
 
     #Announcements
-    path("announcements/", get_announcements, name="get_announcements"),
-    path("announcements/update/", update_announcements, name="update_announcements"),
-    # Use <str:announcement_id> to accept both string and numeric IDs
-    path('announcements/delete/<str:announcement_id>/', delete_announcement, name="delete_announcement"),
-    path('announcements/<str:announcement_id>/', get_announcement_by_id, name="get_announcement_by_id"),
+    path("announcements/", AnnouncementsView.as_view(), name="announcements-list"),
+    path("announcements/update/", UpdateAnnouncementsView.as_view(), name="announcements-update"),
+    path("announcements/delete/<int:announcement_id>/", DeleteAnnouncementView.as_view(), name="announcements-delete"),
 
     #Admin Dashboard paths
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
