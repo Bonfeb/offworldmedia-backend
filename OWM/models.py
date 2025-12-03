@@ -20,21 +20,16 @@ class CustomUser(AbstractUser):
 class Service(models.Model):
     CATEGORY_CHOICES = [
         ('photo-video', 'Photo & Video Shooting'),
-        ('audio', 'Music Production'),
         ('graphic', 'Graphic Designing'),
         ('broadcasting', 'Digital Broadcasting'),
-    ]
-
-    AUDIO_SUBCATEGORY_CHOICES = [
         ('beat_making', 'Beat Making'),
         ('sound_recording', 'Sound Recording'),
-        ('mixing', 'Mixing'),
-        ('mastering', 'Mastering'),
+        ('audio_mixing', 'Audio Mixing'),
+        ('audio_mastering', 'Audio Mastering'),
         ('music_video', 'Music Video Production'),
     ]
-    
+
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    audio_category = models.CharField(max_length=20, choices=AUDIO_SUBCATEGORY_CHOICES, blank=True, null=True) # This field is optional and only required for audio services
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = CloudinaryField('service_images', blank=True, null=True)
@@ -42,11 +37,6 @@ class Service(models.Model):
     class Meta:
         verbose_name = "Service"
         verbose_name_plural = "Services"
-
-    def save(self, *args, **kwargs):
-        if self.category != 'audio':
-            self.audio_category = None
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.category

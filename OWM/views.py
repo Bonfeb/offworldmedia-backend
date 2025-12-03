@@ -389,41 +389,28 @@ class ServiceView(APIView):
         if pk is not None:
             try:
                 service = Service.objects.get(pk=pk)
-                serializer = ServiceSerializer(service, context={'request': request})
-                
+                serializer = ServiceSerializer(
+                    service,
+                    context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except Service.DoesNotExist:
-                return Response({"error": "Service Not Found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "Service Not Found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
-        queryset = Service.objects.all()
-        filtered_services = ServiceFilter(request.GET, queryset=queryset).qs
+        services = Service.objects.all()
+        filtered_services = ServiceFilter(request.GET, queryset=services).qs
 
-        serialized_services = ServiceSerializer(filtered_services, many=True, context={'request': request}).data
+        serialized_services = ServiceSerializer(
+            filtered_services, many=True,
+            context={"request": request},
+        ).data
 
-        grouped_services = defaultdict(lambda: defaultdict(list))
-        for service_data in serialized_services:
-            category = service_data.get('category')
-            if category == 'audio':
-                audio_category = service_data.get('audio_category')
-                if audio_category:
-                   grouped_services[category][audio_category].append(service_data)
-                else:
-                    default_subcategory = f"{category}_services"
-                    grouped_services[category][default_subcategory].append(service_data)
-            else:
-                default_subcategory = f"{category}_services"
-                grouped_services[category][default_subcategory].append(service_data)
-
-        formatted_grouped_services = {
-            cat: dict(subs) for cat, subs in grouped_services.items()
-        }
-
-        response_data = {
-            "services": serialized_services,  # Flat list of all services
-            "grouped_services": formatted_grouped_services  # Grouped by category and subcategory
-        }
-        
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(
+            {"services": serialized_services},
+            status=status.HTTP_200_OK
+        )
     
     def post(self, request):
         """Handle POST requests - create service"""

@@ -88,13 +88,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class ServiceSerializer(serializers.ModelSerializer):
     image = serializers.ImageField()
-    description = serializers.CharField(required=False, allow_blank=True)
-    audio_category = serializers.ChoiceField(choices=Service.AUDIO_SUBCATEGORY_CHOICES, required=False, allow_null=True)
     category = serializers.ChoiceField(choices=Service.CATEGORY_CHOICES, required=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
-        fields = ['id','audio_category', 'category', 'description', 'price', 'image']
+        fields = ['id', 'category', 'description', 'price', 'image']
     
     def get_image(self, obj):
         if not obj.image:
@@ -113,21 +112,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(image)
         
         return image
-    
-    def validate(self, data):
-        category = data.get("category")
-        audio_category = data.get("audio_category")
-
-        if category == "audio" and not audio_category:
-            # If category is audio, audio_category must be provided
-            raise serializers.ValidationError({
-                "audio_category": "Audio category is required for audio services."
-            })
-
-        if category != "audio":
-            data["audio_category"] = None  # Ensure it's null for video/photo
-
-        return data
 
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField(read_only=True)  # Auto-fill user
